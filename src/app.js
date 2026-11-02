@@ -18,6 +18,7 @@ import couponRoutes from "./routes/couponRoutes.js";
 import pricingRoutes from "./routes/pricingRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
 import contentRoutes from "./routes/contentRoutes.js";
+import earningsRoutes from "./routes/earningsRoutes.js";
 import { getRedisStatus } from "./config/redis.js";
 import { getUploadDir } from "./services/storageService.js";
 
@@ -109,6 +110,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin/earnings", earningsRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/coupons", couponRoutes);
