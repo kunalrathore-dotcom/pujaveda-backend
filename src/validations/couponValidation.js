@@ -96,3 +96,4 @@ export const couponOffersSchema = Joi.object({
       "any.required": "Cart items are required to calculate coupon offers",
     }),
 });
+

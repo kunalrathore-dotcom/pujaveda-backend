@@ -13,12 +13,21 @@ export const validate = (schema, property = "body") => {
     });
 
     if (error) {
-      const formattedErrors = error.details.map((detail) => ({
-        field: detail.path.join("."),
-        message: detail.message.replace(/['"]/g, ""),
-      }));
+      const fieldErrors = {};
 
-      return badRequest(res, "Validation failed", formattedErrors);
+      error.details.forEach((detail) => {
+        const fullPath = detail.path.join(".");
+        const leafField = String(detail.path[detail.path.length - 1]);
+        const msg = detail.message.replace(/['"]/g, "");
+
+        if (!fieldErrors[fullPath]) fieldErrors[fullPath] = msg;
+        if (!fieldErrors[leafField]) fieldErrors[leafField] = msg;
+      });
+
+      const primaryMessage =
+        error.details[0]?.message.replace(/['"]/g, "") || "Validation failed";
+
+      return badRequest(res, primaryMessage, fieldErrors);
     }
 
     req[property] = value;

@@ -14,25 +14,63 @@ export const createOrderSchema = Joi.object({
       "array.min": "At least one item is required in the order",
     }),
   customerDetails: Joi.object({
-    name: Joi.string().trim().min(2).max(50).required(),
-    email: Joi.string().trim().email().max(254).required(),
-    phone: Joi.string().trim().max(15).allow("").optional(),
+    name: Joi.string().trim().min(2).max(50).required().messages({
+      "string.empty": "Please enter your name",
+      "string.min": "Name must contain at least 2 characters",
+      "any.required": "Please enter your name",
+    }),
+    email: Joi.string().trim().email().max(254).required().messages({
+      "string.empty": "Please enter your email address",
+      "string.email": "Please enter a valid email address",
+      "any.required": "Please enter your email address",
+    }),
+    phone: Joi.string()
+      .trim()
+      .pattern(/^(?:\+91[\-\s]?)?[6-9]\d{9}$/)
+      .required()
+      .messages({
+        "string.empty": "Please enter your phone number",
+        "string.pattern.base": "Please enter a valid 10-digit mobile number",
+        "any.required": "Please enter your phone number",
+      }),
   }).required(),
   shippingAddress: Joi.object({
-    name: Joi.string().trim().max(100).allow("").optional(),
-    phone: Joi.string().trim().max(20).allow("").optional(),
-    street: Joi.string().trim().max(150).required().messages({
-      "string.empty": "Street address is required",
+    name: Joi.string().trim().min(2).max(100).required().messages({
+      "string.empty": "Please enter the recipient's name",
+      "string.min": "Recipient name must be at least 2 characters",
+      "any.required": "Please enter the recipient's name",
     }),
-    city: Joi.string().trim().max(60).required().messages({
-      "string.empty": "City is required",
+    phone: Joi.string()
+      .trim()
+      .pattern(/^(?:\+91[\-\s]?)?[6-9]\d{9}$/)
+      .required()
+      .messages({
+        "string.empty": "Please enter your phone number",
+        "string.pattern.base": "Please enter a valid 10-digit mobile number",
+        "any.required": "Please enter your phone number",
+      }),
+    street: Joi.string().trim().min(3).max(150).required().messages({
+      "string.empty": "Please enter your street or house address",
+      "string.min": "Street address must be at least 3 characters",
+      "any.required": "Please enter your street or house address",
     }),
-    state: Joi.string().trim().max(60).required().messages({
-      "string.empty": "State is required",
+    city: Joi.string().trim().min(2).max(60).required().messages({
+      "string.empty": "Please enter your city",
+      "any.required": "Please enter your city",
     }),
-    postalCode: Joi.string().trim().max(6).required().messages({
-      "string.empty": "PIN / Postal code is required",
+    state: Joi.string().trim().min(2).max(60).required().messages({
+      "string.empty": "Please enter your state",
+      "any.required": "Please enter your state",
     }),
+    postalCode: Joi.string()
+      .trim()
+      .pattern(/^\d{6}$/)
+      .required()
+      .messages({
+        "string.empty": "Please enter your 6-digit PIN code",
+        "string.pattern.base": "Please enter a valid 6-digit PIN code",
+        "any.required": "Please enter your 6-digit PIN code",
+      }),
     country: Joi.string().trim().max(50).default("India"),
   }).required(),
   paymentMethod: Joi.string()

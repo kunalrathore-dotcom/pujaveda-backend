@@ -553,6 +553,7 @@ export const getEarningsOrders = async (req, res) => {
         additionalEligibleFees: Number(additionalEligibleFees.toFixed(2)),
         shipping: Number((order.shippingFee || 0).toFixed(2)),
         customerTotal: Number((order.totalAmount || 0).toFixed(2)),
+        itemCount: Array.isArray(order.items) ? order.items.reduce((acc, it) => acc + (Number(it.quantity) || 1), 0) : (order.items?.length || 1),
         // Status & Metadata
         isCollected,
         paymentStatus: order.paymentStatus || "pending",

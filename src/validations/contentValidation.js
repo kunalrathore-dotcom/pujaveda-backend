@@ -35,3 +35,4 @@ export const festivalCollectionSchema = Joi.object({
 });
 
 export const updateFestivalCollectionSchema = festivalCollectionSchema.fork(["title", "image"], (s) => s.optional());
+

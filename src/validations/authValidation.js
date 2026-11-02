@@ -107,15 +107,22 @@ export const resetPasswordSchema = Joi.object({
 });
 
 export const updateProfileSchema = Joi.object({
-  name: Joi.string().trim().min(2).max(50).optional(),
-  phone: Joi.string()
+  name: Joi.string()
     .trim()
-    .allow("")
-    .max(15)
-    .pattern(/^$|^[+0-9][0-9\s-]{7,14}$/)
+    .min(2)
+    .max(50)
     .optional()
     .messages({
-      "string.pattern.base": "Enter a valid phone number",
+      "string.min": "Name must contain at least 2 characters",
+      "string.max": "Name cannot exceed 50 characters",
+    }),
+  phone: Joi.string()
+    .trim()
+    .pattern(/^(?:\+91[\-\s]?)?[6-9]\d{9}$/)
+    .allow("")
+    .optional()
+    .messages({
+      "string.pattern.base": "Please enter a valid 10-digit mobile number",
     }),
   avatar: Joi.string().trim().allow("").optional(),
   addresses: Joi.array()
@@ -123,18 +130,61 @@ export const updateProfileSchema = Joi.object({
     .items(
       Joi.object({
         _id: Joi.string().optional(),
-        name: Joi.string().trim().max(50).allow("").optional(),
-        phone: Joi.string().trim().max(15).allow("").optional(),
-        street: Joi.string().trim().max(200).required(),
-        city: Joi.string().trim().max(100).required(),
-        state: Joi.string().trim().max(100).required(),
+        name: Joi.string()
+          .trim()
+          .min(2)
+          .max(50)
+          .required()
+          .messages({
+            "string.empty": "Please enter the recipient's name",
+            "string.min": "Name must contain at least 2 characters",
+            "any.required": "Please enter the recipient's name",
+          }),
+        phone: Joi.string()
+          .trim()
+          .required()
+          .pattern(/^(?:\+91[\-\s]?)?[6-9]\d{9}$/)
+          .messages({
+            "string.empty": "Please enter your phone number",
+            "string.pattern.base": "Please enter a valid 10-digit mobile number",
+            "any.required": "Please enter your phone number",
+          }),
+        street: Joi.string()
+          .trim()
+          .min(3)
+          .max(200)
+          .required()
+          .messages({
+            "string.empty": "Please enter your street or house address",
+            "string.min": "Street address must be at least 3 characters",
+            "any.required": "Please enter your street or house address",
+          }),
+        city: Joi.string()
+          .trim()
+          .min(2)
+          .max(100)
+          .required()
+          .messages({
+            "string.empty": "Please enter your city",
+            "any.required": "Please enter your city",
+          }),
+        state: Joi.string()
+          .trim()
+          .min(2)
+          .max(100)
+          .required()
+          .messages({
+            "string.empty": "Please enter your state",
+            "any.required": "Please enter your state",
+          }),
         postalCode: Joi.string()
           .trim()
           .pattern(/^\d{6}$/)
           .required()
           .messages({
-            "string.pattern.base": "Enter a valid 6-digit Indian PIN code",
-            "string.empty": "PIN Code is required",
+            "string.empty": "Please enter your 6-digit PIN code",
+            "string.pattern.base": "Please enter a valid 6-digit PIN code",
+            "any.required": "Please enter your 6-digit PIN code",
           }),
         country: Joi.string().trim().max(50).default("India"),
         isDefault: Joi.boolean().default(false),

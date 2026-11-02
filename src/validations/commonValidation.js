@@ -19,3 +19,4 @@ export const paginationQuerySchema = Joi.object({
   sortBy: Joi.string().trim().max(50).optional(),
   sortOrder: Joi.string().valid("asc", "desc", "1", "-1").optional(),
 }).unknown(true);
+

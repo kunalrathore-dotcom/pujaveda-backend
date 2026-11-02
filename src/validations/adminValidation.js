@@ -15,3 +15,4 @@ export const customerParamsSchema = Joi.object({
     "any.required": "Customer identifier is required",
   }),
 });
+
