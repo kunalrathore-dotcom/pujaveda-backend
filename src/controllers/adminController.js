@@ -256,6 +256,7 @@ export const getCustomerDetails = async (req, res) => {
         email: customer.email,
         phone: customer.phone || "",
         role: customer.role || "user",
+        avatar: customer.avatar || null,
         isActive: customer.isActive !== undefined ? customer.isActive : true,
         addresses: Array.isArray(customer.addresses) ? customer.addresses : [],
         createdAt: customer.createdAt,

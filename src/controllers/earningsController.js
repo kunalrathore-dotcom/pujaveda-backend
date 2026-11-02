@@ -501,6 +501,7 @@ export const getEarningsOrders = async (req, res) => {
 
     const [rawOrders, total] = await Promise.all([
       Order.find(filter)
+        .populate("user", "name email phone")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNum)
@@ -533,13 +534,35 @@ export const getEarningsOrders = async (req, res) => {
         return acc + (Number(c.amount) || 0);
       }, 0);
 
+      const userDoc = order.user;
+      const userId = userDoc?._id
+        ? String(userDoc._id)
+        : order.user
+        ? String(order.user)
+        : null;
+
+      const customerName =
+        order.customerDetails?.name ||
+        userDoc?.name ||
+        "Customer";
+
+      const customerEmail =
+        order.customerDetails?.email ||
+        userDoc?.email ||
+        "";
+
+      const customerPhone =
+        order.customerDetails?.phone ||
+        userDoc?.phone ||
+        "";
+
       return {
         _id: order._id,
         orderNumber: order.orderNumber,
-        customerName: order.customerDetails?.name || "Customer",
-        customerEmail: order.customerDetails?.email || "",
-        customerPhone: order.customerDetails?.phone || "",
-        userId: order.user ? String(order.user) : null,
+        customerName,
+        customerEmail,
+        customerPhone,
+        userId,
         orderDate: order.createdAt,
         // Three Core Figures
         productValue: Number((order.subtotal || 0).toFixed(2)),
