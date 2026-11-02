@@ -52,6 +52,27 @@ export function isOrderPaidAndCollected(order) {
 }
 
 /**
+ * Resolves the authoritative payment collection timestamp of an order.
+ * - Online orders: verifiedAt || paidAt || updatedAt || createdAt
+ * - COD orders: updatedAt (timestamp when marked Delivered & paid) || createdAt
+ */
+export function getOrderCollectionDate(order) {
+  if (!order) return null;
+  if (!isOrderPaidAndCollected(order)) return null;
+
+  if (order.paymentDetails?.verifiedAt) {
+    return new Date(order.paymentDetails.verifiedAt);
+  }
+  if (order.paymentDetails?.paidAt) {
+    return new Date(order.paymentDetails.paidAt);
+  }
+  if (order.paymentMethod === "cod") {
+    return order.updatedAt ? new Date(order.updatedAt) : new Date(order.createdAt);
+  }
+  return order.updatedAt ? new Date(order.updatedAt) : new Date(order.createdAt);
+}
+
+/**
  * Calculates eligible fee earnings on an order.
  * Strictly includes:
  * - platformFee
@@ -344,7 +365,7 @@ export const getEarningsSummary = async (req, res) => {
       cancelledOrdersCount: 0,
     };
 
-    // Calculate additional eligible service fees on collected orders
+    // Fetch all collected orders to calculate total revenue, today's revenue, and admin fee earnings
     const collectedOrders = await Order.find({
       ...matchFilter,
       orderStatus: { $ne: "Cancelled" },
@@ -353,19 +374,46 @@ export const getEarningsSummary = async (req, res) => {
         { paymentMethod: { $ne: "cod" }, paymentStatus: "paid" },
       ],
     })
-      .select("platformFee chargesBreakdown")
+      .select("totalAmount paymentMethod orderStatus paymentStatus paymentDetails updatedAt createdAt platformFee chargesBreakdown")
       .lean();
 
+    // Determine Today's bounds in IST (Asia/Kolkata)
+    const now = new Date();
+    const istFormatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const todayIST = istFormatter.format(now); // "YYYY-MM-DD"
+    const todayStart = new Date(`${todayIST}T00:00:00.000+05:30`).getTime();
+    const todayEnd = new Date(`${todayIST}T23:59:59.999+05:30`).getTime();
+
+    let totalRevenue = 0;
+    let todayRevenue = 0;
     let totalAdminFeeEarnings = 0;
+
     for (const ord of collectedOrders) {
+      const amount = Number(ord.totalAmount || 0);
+      totalRevenue += amount;
       totalAdminFeeEarnings += calculateOrderEligibleFee(ord);
+
+      const collDate = getOrderCollectionDate(ord);
+      if (collDate) {
+        const collTime = collDate.getTime();
+        if (collTime >= todayStart && collTime <= todayEnd) {
+          todayRevenue += amount;
+        }
+      }
     }
 
     res.json({
       success: true,
       summary: {
+        totalRevenue: Number(totalRevenue.toFixed(2)),
+        todayRevenue: Number(todayRevenue.toFixed(2)),
         productValue: Number(result.productValue.toFixed(2)),
-        customerPaid: Number(result.customerPaid.toFixed(2)),
+        customerPaid: Number(totalRevenue.toFixed(2)),
         adminFeeEarnings: Number(totalAdminFeeEarnings.toFixed(2)),
         taxesCollected: Number(result.taxesCollected.toFixed(2)),
         platformFee: Number(result.platformFeeCollected.toFixed(2)),
@@ -373,7 +421,7 @@ export const getEarningsSummary = async (req, res) => {
         discountGiven: Number(result.discountGiven.toFixed(2)),
         pendingAmount: Number(result.pendingAmount.toFixed(2)),
         totalOrders: result.totalOrders,
-        collectedOrdersCount: result.collectedOrdersCount,
+        collectedOrdersCount: collectedOrders.length,
         pendingOrdersCount: result.pendingOrdersCount,
         failedOrdersCount: result.failedOrdersCount,
         cancelledOrdersCount: result.cancelledOrdersCount,
@@ -435,6 +483,8 @@ export const getEarningsOrders = async (req, res) => {
         { "customerDetails.name": { $regex: escaped, $options: "i" } },
         { "customerDetails.email": { $regex: escaped, $options: "i" } },
         { "customerDetails.phone": { $regex: escaped, $options: "i" } },
+        { "paymentDetails.razorpayPaymentId": { $regex: escaped, $options: "i" } },
+        { "paymentDetails.razorpayOrderId": { $regex: escaped, $options: "i" } },
       ];
 
       if (mongoose.Types.ObjectId.isValid(q)) {
@@ -569,16 +619,8 @@ export const getEarningsChart = async (req, res) => {
       const adminFee = isCollected ? calculateOrderEligibleFee(order) : 0;
 
       // Reliable collection timestamp
-      let paymentTime = null;
-      if (isCollected) {
-        if (order.paymentDetails?.verifiedAt) {
-          paymentTime = new Date(order.paymentDetails.verifiedAt).getTime();
-        } else if (order.updatedAt) {
-          paymentTime = new Date(order.updatedAt).getTime();
-        } else {
-          paymentTime = new Date(order.createdAt).getTime();
-        }
-      }
+      const collDate = getOrderCollectionDate(order);
+      const paymentTime = collDate ? collDate.getTime() : null;
 
       const creationTime = new Date(order.createdAt).getTime();
 

@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import { fileURLToPath } from "url";
 
 import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import bannerRoutes from "./routes/bannerRoutes.js";
@@ -103,6 +104,7 @@ app.get("/api/health", async (req, res) => {
 
 // API Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/banners", bannerRoutes);

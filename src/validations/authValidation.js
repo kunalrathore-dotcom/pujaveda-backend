@@ -117,6 +117,7 @@ export const updateProfileSchema = Joi.object({
     .messages({
       "string.pattern.base": "Enter a valid phone number",
     }),
+  avatar: Joi.string().trim().allow("").optional(),
   addresses: Joi.array()
     .items(
       Joi.object({
