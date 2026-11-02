@@ -328,10 +328,13 @@ export const updateOrderStatus = async (req, res) => {
 
   order.orderStatus = orderStatus;
 
-  // IMPORTANT: Do NOT automatically mark unpaid razorpay orders as paid through ordinary status updates.
-  // COD orders delivered can be marked paid.
-  if (orderStatus === "Delivered" && order.paymentMethod === "cod") {
-    order.paymentStatus = "paid";
+  // COD orders: mark paid on Delivered; revert to pending if transitioned away from Delivered
+  if (order.paymentMethod === "cod") {
+    if (orderStatus === "Delivered") {
+      order.paymentStatus = "paid";
+    } else if (previousStatus === "Delivered" && orderStatus !== "Delivered") {
+      order.paymentStatus = "pending";
+    }
   }
 
   await order.save();

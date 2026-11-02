@@ -18,5 +18,9 @@ export const getEarningsOrdersSchema = Joi.object({
 export const getEarningsChartSchema = Joi.object({
   mode: Joi.string().valid("day", "month", "year").default("day").optional(),
   date: Joi.string().trim().max(20).allow("").optional(),
-  metric: Joi.string().valid("totalCollected", "productRevenue", "platformFee").default("totalCollected").optional(),
+  metric: Joi.string()
+    .valid("totalCollected", "adminFeeEarnings", "productRevenue", "platformFee")
+    .default("totalCollected")
+    .optional(),
 });
+

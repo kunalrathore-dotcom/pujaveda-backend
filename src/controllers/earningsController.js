@@ -9,7 +9,7 @@ function escapeRegex(string) {
 }
 
 /**
- * Parses an IST date string or Date object into a reliable date representation.
+ * Parses a date string into reliable calendar year, month, day components.
  */
 function parseDateParts(dateStr, defaultDate = new Date()) {
   if (!dateStr || typeof dateStr !== "string") {
@@ -35,17 +35,66 @@ function parseDateParts(dateStr, defaultDate = new Date()) {
 }
 
 /**
+ * Determines whether an order is officially confirmed collected.
+ * Rules:
+ * 1. Cancelled orders are never collected.
+ * 2. COD orders are collected ONLY after orderStatus is 'Delivered' AND paymentStatus is 'paid'.
+ * 3. Online orders (Razorpay, demo_online) are collected ONLY if paymentStatus is 'paid'.
+ */
+export function isOrderPaidAndCollected(order) {
+  if (!order || order.orderStatus === "Cancelled") {
+    return false;
+  }
+  if (order.paymentMethod === "cod") {
+    return order.orderStatus === "Delivered" && order.paymentStatus === "paid";
+  }
+  return order.paymentStatus === "paid";
+}
+
+/**
+ * Calculates eligible fee earnings on an order.
+ * Strictly includes:
+ * - platformFee
+ * - eligible service/convenience charges from chargesBreakdown
+ * Strictly EXCLUDES:
+ * - taxes (GST/tax)
+ * - customer shipping
+ * - duplicate charges
+ */
+export function calculateOrderEligibleFee(order) {
+  const platformFee = Number(order.platformFee || 0);
+  const charges = Array.isArray(order.chargesBreakdown) ? order.chargesBreakdown : [];
+  const additionalEligibleFees = charges.reduce((acc, c) => {
+    const key = (c.key || "").toLowerCase();
+    const name = (c.name || "").toLowerCase();
+    // Exclude taxes, platform_fee duplicate, and shipping
+    if (
+      key === "gst" ||
+      key === "tax" ||
+      key === "platform_fee" ||
+      key === "shipping" ||
+      name.includes("gst") ||
+      name.includes("tax") ||
+      name.includes("shipping") ||
+      name.includes("platform fee")
+    ) {
+      return acc;
+    }
+    return acc + (Number(c.amount) || 0);
+  }, 0);
+
+  return Number((platformFee + additionalEligibleFees).toFixed(2));
+}
+
+/**
  * Generates 7 daily slots starting from reference date (Day 0 + next 6 days).
- * Uses IST (+05:30) offset for accurate local Indian business day calculations.
  */
 function generateDaySlots(dateStr) {
   const { y, m, d } = parseDateParts(dateStr);
   const slots = [];
 
   for (let i = 0; i < 7; i++) {
-    // Construct UTC date and compute offset
     const current = new Date(Date.UTC(y, m - 1, d + i, 0, 0, 0, 0));
-    // IST start and end for this day
     const year = current.getUTCFullYear();
     const month = String(current.getUTCMonth() + 1).padStart(2, "0");
     const day = String(current.getUTCDate()).padStart(2, "0");
@@ -71,6 +120,7 @@ function generateDaySlots(dateStr) {
       start,
       end,
       totalCollected: 0,
+      adminFeeEarnings: 0,
       productRevenue: 0,
       platformFee: 0,
       orderCount: 0,
@@ -95,10 +145,7 @@ function generateMonthSlots(dateStr) {
     const monthNum = current.getUTCMonth() + 1;
     const monthStr = String(monthNum).padStart(2, "0");
 
-    // Start of month in IST
     const start = new Date(`${year}-${monthStr}-01T00:00:00.000+05:30`);
-
-    // End of month in IST
     const nextMonth = new Date(Date.UTC(year, monthNum, 1, 0, 0, 0, 0));
     const lastDayOfMonth = new Date(nextMonth.getTime() - 86400000).getUTCDate();
     const lastDayStr = String(lastDayOfMonth).padStart(2, "0");
@@ -120,6 +167,7 @@ function generateMonthSlots(dateStr) {
       start,
       end,
       totalCollected: 0,
+      adminFeeEarnings: 0,
       productRevenue: 0,
       platformFee: 0,
       orderCount: 0,
@@ -151,6 +199,7 @@ function generateYearSlots(dateStr) {
       start,
       end,
       totalCollected: 0,
+      adminFeeEarnings: 0,
       productRevenue: 0,
       platformFee: 0,
       orderCount: 0,
@@ -164,7 +213,7 @@ function generateYearSlots(dateStr) {
 
 /**
  * GET /api/admin/earnings/summary
- * Summary metrics: Total Collected, Product Subtotal, Discount Given, Taxes Collected, Platform Fee, Shipping Collected.
+ * Summary metrics: Product Value, Customer Paid, Admin Fee Earnings, Taxes, Shipping, Discounts.
  */
 export const getEarningsSummary = async (req, res) => {
   try {
@@ -183,40 +232,97 @@ export const getEarningsSummary = async (req, res) => {
       }
     }
 
+    // Strict collection eligibility condition in MongoDB
+    const isCollectedCond = {
+      $and: [
+        { $ne: ["$orderStatus", "Cancelled"] },
+        {
+          $or: [
+            {
+              $and: [
+                { $eq: ["$paymentMethod", "cod"] },
+                { $eq: ["$orderStatus", "Delivered"] },
+                { $eq: ["$paymentStatus", "paid"] },
+              ],
+            },
+            {
+              $and: [
+                { $ne: ["$paymentMethod", "cod"] },
+                { $eq: ["$paymentStatus", "paid"] },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
     const aggregation = await Order.aggregate([
       { $match: matchFilter },
       {
         $group: {
           _id: null,
           totalOrders: { $sum: 1 },
-          totalCollected: {
+          productValue: { $sum: { $ifNull: ["$subtotal", 0] } },
+          customerPaid: {
             $sum: {
-              $cond: [{ $eq: ["$paymentStatus", "paid"] }, "$totalAmount", 0],
+              $cond: [isCollectedCond, "$totalAmount", 0],
             },
           },
-          productSubtotal: { $sum: { $ifNull: ["$subtotal", 0] } },
+          platformFeeCollected: {
+            $sum: {
+              $cond: [isCollectedCond, { $ifNull: ["$platformFee", 0] }, 0],
+            },
+          },
+          taxesCollected: {
+            $sum: {
+              $cond: [isCollectedCond, { $ifNull: ["$taxAmount", 0] }, 0],
+            },
+          },
+          shippingCollected: {
+            $sum: {
+              $cond: [isCollectedCond, { $ifNull: ["$shippingFee", 0] }, 0],
+            },
+          },
           discountGiven: { $sum: { $ifNull: ["$coupon.discount", 0] } },
-          taxesCollected: { $sum: { $ifNull: ["$taxAmount", 0] } },
-          platformFee: { $sum: { $ifNull: ["$platformFee", 0] } },
-          shippingCollected: { $sum: { $ifNull: ["$shippingFee", 0] } },
           pendingAmount: {
             $sum: {
-              $cond: [{ $eq: ["$paymentStatus", "pending"] }, "$totalAmount", 0],
+              $cond: [
+                { $not: isCollectedCond },
+                {
+                  $cond: [{ $ne: ["$orderStatus", "Cancelled"] }, "$totalAmount", 0],
+                },
+                0,
+              ],
             },
           },
-          paidOrdersCount: {
+          collectedOrdersCount: {
             $sum: {
-              $cond: [{ $eq: ["$paymentStatus", "paid"] }, 1, 0],
+              $cond: [isCollectedCond, 1, 0],
             },
           },
           pendingOrdersCount: {
             $sum: {
-              $cond: [{ $eq: ["$paymentStatus", "pending"] }, 1, 0],
+              $cond: [
+                {
+                  $and: [
+                    { $not: isCollectedCond },
+                    { $ne: ["$orderStatus", "Cancelled"] },
+                    { $ne: ["$paymentStatus", "failed"] },
+                  ],
+                },
+                1,
+                0,
+              ],
             },
           },
           failedOrdersCount: {
             $sum: {
               $cond: [{ $eq: ["$paymentStatus", "failed"] }, 1, 0],
+            },
+          },
+          cancelledOrdersCount: {
+            $sum: {
+              $cond: [{ $eq: ["$orderStatus", "Cancelled"] }, 1, 0],
             },
           },
         },
@@ -225,32 +331,52 @@ export const getEarningsSummary = async (req, res) => {
 
     const result = aggregation[0] || {
       totalOrders: 0,
-      totalCollected: 0,
-      productSubtotal: 0,
-      discountGiven: 0,
+      productValue: 0,
+      customerPaid: 0,
+      platformFeeCollected: 0,
       taxesCollected: 0,
-      platformFee: 0,
       shippingCollected: 0,
+      discountGiven: 0,
       pendingAmount: 0,
-      paidOrdersCount: 0,
+      collectedOrdersCount: 0,
       pendingOrdersCount: 0,
       failedOrdersCount: 0,
+      cancelledOrdersCount: 0,
     };
+
+    // Calculate additional eligible service fees on collected orders
+    const collectedOrders = await Order.find({
+      ...matchFilter,
+      orderStatus: { $ne: "Cancelled" },
+      $or: [
+        { paymentMethod: "cod", orderStatus: "Delivered", paymentStatus: "paid" },
+        { paymentMethod: { $ne: "cod" }, paymentStatus: "paid" },
+      ],
+    })
+      .select("platformFee chargesBreakdown")
+      .lean();
+
+    let totalAdminFeeEarnings = 0;
+    for (const ord of collectedOrders) {
+      totalAdminFeeEarnings += calculateOrderEligibleFee(ord);
+    }
 
     res.json({
       success: true,
       summary: {
-        totalCollected: Number(result.totalCollected.toFixed(2)),
-        productSubtotal: Number(result.productSubtotal.toFixed(2)),
-        discountGiven: Number(result.discountGiven.toFixed(2)),
+        productValue: Number(result.productValue.toFixed(2)),
+        customerPaid: Number(result.customerPaid.toFixed(2)),
+        adminFeeEarnings: Number(totalAdminFeeEarnings.toFixed(2)),
         taxesCollected: Number(result.taxesCollected.toFixed(2)),
-        platformFee: Number(result.platformFee.toFixed(2)),
+        platformFee: Number(result.platformFeeCollected.toFixed(2)),
         shippingCollected: Number(result.shippingCollected.toFixed(2)),
+        discountGiven: Number(result.discountGiven.toFixed(2)),
         pendingAmount: Number(result.pendingAmount.toFixed(2)),
         totalOrders: result.totalOrders,
-        paidOrdersCount: result.paidOrdersCount,
+        collectedOrdersCount: result.collectedOrdersCount,
         pendingOrdersCount: result.pendingOrdersCount,
         failedOrdersCount: result.failedOrdersCount,
+        cancelledOrdersCount: result.cancelledOrdersCount,
       },
     });
   } catch (err) {
@@ -264,7 +390,8 @@ export const getEarningsSummary = async (req, res) => {
 
 /**
  * GET /api/admin/earnings/orders
- * Paginated list of latest orders with complete financial columns directly visible.
+ * Paginated list of latest orders with clear financial breakdown columns:
+ * Product Value, Customer Paid, Admin Fee Earnings, Taxes, Fees, Shipping, Total.
  */
 export const getEarningsOrders = async (req, res) => {
   try {
@@ -331,20 +458,30 @@ export const getEarningsOrders = async (req, res) => {
       Order.countDocuments(filter),
     ]);
 
-    // Format financial breakdown columns strictly avoiding double-counting
     const orders = rawOrders.map((order) => {
-      // Calculate non-tax, non-platform additional charges from chargesBreakdown
+      const isCollected = isOrderPaidAndCollected(order);
+      const customerPaid = isCollected ? Number(order.totalAmount || 0) : 0;
+      const adminFeeEarnings = isCollected ? calculateOrderEligibleFee(order) : 0;
+
+      // Extract non-tax, non-platform additional charges
       const charges = Array.isArray(order.chargesBreakdown) ? order.chargesBreakdown : [];
-      const additionalCharges = charges.reduce((acc, c) => {
+      const additionalEligibleFees = charges.reduce((acc, c) => {
         const key = (c.key || "").toLowerCase();
-        if (["gst", "tax", "platform_fee", "shipping"].includes(key)) {
+        const name = (c.name || "").toLowerCase();
+        if (
+          key === "gst" ||
+          key === "tax" ||
+          key === "platform_fee" ||
+          key === "shipping" ||
+          name.includes("gst") ||
+          name.includes("tax") ||
+          name.includes("shipping") ||
+          name.includes("platform fee")
+        ) {
           return acc;
         }
         return acc + (Number(c.amount) || 0);
       }, 0);
-
-      const isPaid = order.paymentStatus === "paid";
-      const amountPaid = isPaid ? Number(order.totalAmount || 0) : 0;
 
       return {
         _id: order._id,
@@ -354,17 +491,23 @@ export const getEarningsOrders = async (req, res) => {
         customerPhone: order.customerDetails?.phone || "",
         userId: order.user ? String(order.user) : null,
         orderDate: order.createdAt,
-        subtotal: Number((order.subtotal || 0).toFixed(2)),
+        // Three Core Figures
+        productValue: Number((order.subtotal || 0).toFixed(2)),
+        customerPaid: Number(customerPaid.toFixed(2)),
+        adminFeeEarnings: Number(adminFeeEarnings.toFixed(2)),
+        // Other Essential Breakdown Figures
         discount: Number((order.coupon?.discount || 0).toFixed(2)),
-        taxAmount: Number((order.taxAmount || 0).toFixed(2)),
+        discountedProductValue: Number((order.discountedSubtotal || order.subtotal || 0).toFixed(2)),
+        tax: Number((order.taxAmount || 0).toFixed(2)),
         platformFee: Number((order.platformFee || 0).toFixed(2)),
-        additionalCharges: Number(additionalCharges.toFixed(2)),
-        shippingFee: Number((order.shippingFee || 0).toFixed(2)),
-        totalAmount: Number((order.totalAmount || 0).toFixed(2)),
-        amountPaid: Number(amountPaid.toFixed(2)),
-        paymentStatus: order.paymentStatus,
-        paymentMethod: order.paymentMethod,
-        orderStatus: order.orderStatus,
+        additionalEligibleFees: Number(additionalEligibleFees.toFixed(2)),
+        shipping: Number((order.shippingFee || 0).toFixed(2)),
+        customerTotal: Number((order.totalAmount || 0).toFixed(2)),
+        // Status & Metadata
+        isCollected,
+        paymentStatus: order.paymentStatus || "pending",
+        paymentMethod: order.paymentMethod || "cod",
+        orderStatus: order.orderStatus || "Pending",
         chargesBreakdown: charges,
       };
     });
@@ -391,7 +534,6 @@ export const getEarningsOrders = async (req, res) => {
 /**
  * GET /api/admin/earnings/chart
  * Chronological timeline chart: Day (7 days), Month (12 months), Year (5 years).
- * Reference period is always point 0 (first), followed by chronological future periods.
  */
 export const getEarningsChart = async (req, res) => {
   try {
@@ -418,16 +560,16 @@ export const getEarningsChart = async (req, res) => {
       ],
     }).lean();
 
-    // Map each order to its respective slot
     orders.forEach((order) => {
-      const isPaid = order.paymentStatus === "paid";
-      const totalAmount = Number(order.totalAmount || 0);
-      const productRevenue = Number(order.discountedSubtotal || order.subtotal || 0);
-      const platformFee = Number(order.platformFee || 0);
+      const isCollected = isOrderPaidAndCollected(order);
+      const customerPaid = isCollected ? Number(order.totalAmount || 0) : 0;
+      const productRevenue = isCollected ? Number(order.discountedSubtotal || order.subtotal || 0) : 0;
+      const platformFee = isCollected ? Number(order.platformFee || 0) : 0;
+      const adminFee = isCollected ? calculateOrderEligibleFee(order) : 0;
 
-      // Payment date: verifiedAt -> updatedAt (if paid) -> createdAt
+      // Reliable collection timestamp
       let paymentTime = null;
-      if (isPaid) {
+      if (isCollected) {
         if (order.paymentDetails?.verifiedAt) {
           paymentTime = new Date(order.paymentDetails.verifiedAt).getTime();
         } else if (order.updatedAt) {
@@ -439,21 +581,22 @@ export const getEarningsChart = async (req, res) => {
 
       const creationTime = new Date(order.createdAt).getTime();
 
-      // Find slot for order creation
       for (const slot of slots) {
         const slotStart = slot.start.getTime();
         const slotEnd = slot.end.getTime();
 
+        // Count order placement
         if (creationTime >= slotStart && creationTime <= slotEnd) {
           slot.orderCount += 1;
-          if (!isPaid) {
-            slot.pendingAmount += totalAmount;
+          if (!isCollected && order.orderStatus !== "Cancelled") {
+            slot.pendingAmount += Number(order.totalAmount || 0);
           }
         }
 
-        // Find slot for payment collection
-        if (isPaid && paymentTime && paymentTime >= slotStart && paymentTime <= slotEnd) {
-          slot.totalCollected += totalAmount;
+        // Count actual payment collection
+        if (isCollected && paymentTime && paymentTime >= slotStart && paymentTime <= slotEnd) {
+          slot.totalCollected += customerPaid;
+          slot.adminFeeEarnings += adminFee;
           slot.productRevenue += productRevenue;
           slot.platformFee += platformFee;
           slot.paidOrderCount += 1;
@@ -461,11 +604,12 @@ export const getEarningsChart = async (req, res) => {
       }
     });
 
-    // Compute metric values and clean responses
     let hasData = false;
     const points = slots.map((slot) => {
       let metricVal = 0;
-      if (metric === "productRevenue") {
+      if (metric === "adminFeeEarnings") {
+        metricVal = slot.adminFeeEarnings;
+      } else if (metric === "productRevenue") {
         metricVal = slot.productRevenue;
       } else if (metric === "platformFee") {
         metricVal = slot.platformFee;
@@ -485,6 +629,7 @@ export const getEarningsChart = async (req, res) => {
         isReference: slot.isReference,
         value: metricVal,
         totalCollected: Number(slot.totalCollected.toFixed(2)),
+        adminFeeEarnings: Number(slot.adminFeeEarnings.toFixed(2)),
         productRevenue: Number(slot.productRevenue.toFixed(2)),
         platformFee: Number(slot.platformFee.toFixed(2)),
         pendingAmount: Number(slot.pendingAmount.toFixed(2)),
