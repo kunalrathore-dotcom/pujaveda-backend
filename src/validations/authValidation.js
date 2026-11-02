@@ -119,16 +119,30 @@ export const updateProfileSchema = Joi.object({
     }),
   avatar: Joi.string().trim().allow("").optional(),
   addresses: Joi.array()
+    .max(3)
     .items(
       Joi.object({
-        street: Joi.string().trim().required(),
-        city: Joi.string().trim().required(),
-        state: Joi.string().trim().required(),
-        postalCode: Joi.string().trim().required(),
-        country: Joi.string().trim().default("India"),
+        _id: Joi.string().optional(),
+        name: Joi.string().trim().max(50).allow("").optional(),
+        phone: Joi.string().trim().max(15).allow("").optional(),
+        street: Joi.string().trim().max(200).required(),
+        city: Joi.string().trim().max(100).required(),
+        state: Joi.string().trim().max(100).required(),
+        postalCode: Joi.string()
+          .trim()
+          .pattern(/^\d{6}$/)
+          .required()
+          .messages({
+            "string.pattern.base": "Enter a valid 6-digit Indian PIN code",
+            "string.empty": "PIN Code is required",
+          }),
+        country: Joi.string().trim().max(50).default("India"),
         isDefault: Joi.boolean().default(false),
       })
     )
+    .messages({
+      "array.max": "You can save a maximum of 3 addresses in your account.",
+    })
     .optional(),
 });
 

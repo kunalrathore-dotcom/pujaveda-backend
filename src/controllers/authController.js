@@ -213,7 +213,21 @@ export const updateProfile = async (req, res) => {
 
     if (name !== undefined) user.name = name;
     if (phone !== undefined) user.phone = phone;
-    if (addresses !== undefined) user.addresses = addresses;
+    if (addresses !== undefined && Array.isArray(addresses)) {
+      if (addresses.length > 3) {
+        return badRequest(res, "You can save a maximum of 3 addresses in your account.");
+      }
+      user.addresses = addresses.slice(0, 3).map((addr) => ({
+        name: String(addr.name || "").trim(),
+        phone: String(addr.phone || "").trim(),
+        street: String(addr.street || "").trim(),
+        city: String(addr.city || "").trim(),
+        state: String(addr.state || "").trim(),
+        postalCode: String(addr.postalCode || "").trim(),
+        country: String(addr.country || "India").trim(),
+        isDefault: Boolean(addr.isDefault),
+      }));
+    }
 
     await user.save();
 

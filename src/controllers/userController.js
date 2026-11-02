@@ -78,7 +78,15 @@ export const updateProfile = async (req, res) => {
       user.phone = String(phone).trim();
     }
     if (addresses !== undefined && Array.isArray(addresses)) {
-      user.addresses = addresses.map((addr) => ({
+      if (addresses.length > 3) {
+        return res.status(400).json({
+          success: false,
+          message: "You can save a maximum of 3 addresses in your account.",
+        });
+      }
+      user.addresses = addresses.slice(0, 3).map((addr) => ({
+        name: String(addr.name || "").trim(),
+        phone: String(addr.phone || "").trim(),
         street: String(addr.street || "").trim(),
         city: String(addr.city || "").trim(),
         state: String(addr.state || "").trim(),
@@ -178,3 +186,4 @@ export const uploadAvatar = async (req, res) => {
     });
   }
 };
+

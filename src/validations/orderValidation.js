@@ -19,6 +19,8 @@ export const createOrderSchema = Joi.object({
     phone: Joi.string().trim().max(15).allow("").optional(),
   }).required(),
   shippingAddress: Joi.object({
+    name: Joi.string().trim().max(100).allow("").optional(),
+    phone: Joi.string().trim().max(20).allow("").optional(),
     street: Joi.string().trim().max(150).required().messages({
       "string.empty": "Street address is required",
     }),
