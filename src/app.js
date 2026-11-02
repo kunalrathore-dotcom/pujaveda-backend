@@ -19,6 +19,7 @@ import pricingRoutes from "./routes/pricingRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
 import contentRoutes from "./routes/contentRoutes.js";
 import { getRedisStatus } from "./config/redis.js";
+import { getUploadDir } from "./services/storageService.js";
 
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler.js";
 
@@ -64,9 +65,26 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Statically serve uploaded files
-const uploadsPath = path.resolve(__dirname, "../uploads");
-app.use("/uploads", express.static(uploadsPath));
+// Statically serve uploaded files from persistent disk or local fallback
+const uploadsPath = getUploadDir();
+app.use(
+  "/uploads",
+  express.static(uploadsPath, {
+    maxAge: "1d",
+    setHeaders: (res) => {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    },
+  })
+);
+
+// Fallback for missing uploaded image files
+app.use("/uploads", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Requested image file not found on server.",
+  });
+});
 
 // Health check endpoint with database and redis statuses
 app.get("/api/health", async (req, res) => {

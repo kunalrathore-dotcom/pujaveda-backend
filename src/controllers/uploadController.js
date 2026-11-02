@@ -1,7 +1,7 @@
 import multer from "multer";
 import { storageService } from "../services/storageService.js";
 
-// Multer in-memory storage for inspection & validation
+// Multer memoryStorage allows in-flight validation before any bytes hit disk
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
@@ -22,6 +22,7 @@ export const uploadMiddleware = multer({
   storage,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB per file limit
+    files: 10, // Max 10 files per batch
   },
   fileFilter,
 });
@@ -42,6 +43,7 @@ export const uploadImage = async (req, res) => {
       originalname: req.file.originalname,
       mimetype: req.file.mimetype,
       folder,
+      req,
     });
 
     res.status(201).json({
@@ -49,7 +51,9 @@ export const uploadImage = async (req, res) => {
       message: "Image uploaded successfully.",
       url: result.url,
       publicId: result.publicId,
-      provider: result.provider,
+      filename: result.filename,
+      size: result.size,
+      provider: "local",
     });
   } catch (error) {
     res.status(400).json({
@@ -78,13 +82,16 @@ export const uploadMultipleImages = async (req, res) => {
         originalname: file.originalname,
         mimetype: file.mimetype,
         folder,
+        req,
       });
 
       uploadedResults.push({
         url: result.url,
         publicId: result.publicId,
+        filename: result.filename,
         originalname: file.originalname,
-        provider: result.provider,
+        size: result.size,
+        provider: "local",
       });
     } catch (err) {
       errors.push({
@@ -108,6 +115,7 @@ export const uploadMultipleImages = async (req, res) => {
     images: uploadedResults,
     urls: uploadedResults.map((r) => r.url),
     publicIds: uploadedResults.map((r) => r.publicId),
+    imageIds: uploadedResults.map((r) => r.publicId),
     failedCount: errors.length,
     errors: errors.length > 0 ? errors : undefined,
   });
