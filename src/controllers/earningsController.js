@@ -508,6 +508,7 @@ export const getEarningsOrders = async (req, res) => {
         paymentStatus: order.paymentStatus || "pending",
         paymentMethod: order.paymentMethod || "cod",
         orderStatus: order.orderStatus || "Pending",
+        transactionId: order.paymentDetails?.razorpayPaymentId || order.paymentDetails?.razorpayOrderId || null,
         chargesBreakdown: charges,
       };
     });

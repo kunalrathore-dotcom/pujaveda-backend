@@ -1,6 +1,9 @@
+import mongoose from "mongoose";
 import { Product } from "../models/Product.js";
 import { Order } from "../models/Order.js";
 import { User } from "../models/User.js";
+import { Wishlist } from "../models/Wishlist.js";
+import { isOrderPaidAndCollected, calculateOrderEligibleFee } from "./earningsController.js";
 
 /**
  * Aggregates real-time ecommerce dashboard metrics directly from MongoDB.
@@ -178,6 +181,123 @@ export const getCustomers = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch customers from database.",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Returns complete customer details, order summary, order history, and wishlist from MongoDB.
+ */
+export const getCustomerDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid customer ID format.",
+      });
+    }
+
+    const customer = await User.findById(id).select("-password").lean();
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found.",
+      });
+    }
+
+    // Fetch customer's actual orders
+    const rawOrders = await Order.find({ user: customer._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    let totalPaid = 0;
+    let totalPending = 0;
+    let productValue = 0;
+    let paidOrdersCount = 0;
+    let pendingOrdersCount = 0;
+    let deliveredOrdersCount = 0;
+    let cancelledOrdersCount = 0;
+
+    const formattedOrders = rawOrders.map((o) => {
+      const isCollected = isOrderPaidAndCollected(o);
+      const customerPaid = isCollected ? Number(o.totalAmount || 0) : 0;
+      const orderAdminFee = isCollected ? calculateOrderEligibleFee(o) : 0;
+
+      productValue += Number(o.subtotal || 0);
+
+      if (isCollected) {
+        totalPaid += customerPaid;
+        paidOrdersCount += 1;
+      } else if (o.orderStatus !== "Cancelled") {
+        totalPending += Number(o.totalAmount || 0);
+        pendingOrdersCount += 1;
+      }
+
+      if (o.orderStatus === "Delivered") deliveredOrdersCount += 1;
+      if (o.orderStatus === "Cancelled") cancelledOrdersCount += 1;
+
+      return {
+        _id: o._id,
+        orderNumber: o.orderNumber,
+        orderDate: o.createdAt,
+        productValue: Number((o.subtotal || 0).toFixed(2)),
+        discount: Number((o.coupon?.discount || 0).toFixed(2)),
+        tax: Number((o.taxAmount || 0).toFixed(2)),
+        platformFee: Number((o.platformFee || 0).toFixed(2)),
+        shippingFee: Number((o.shippingFee || 0).toFixed(2)),
+        finalOrderAmount: Number((o.totalAmount || 0).toFixed(2)),
+        customerPaid: Number(customerPaid.toFixed(2)),
+        adminFeeEarnings: Number(orderAdminFee.toFixed(2)),
+        paymentStatus: o.paymentStatus || "pending",
+        orderStatus: o.orderStatus || "Pending",
+        paymentMethod: o.paymentMethod || "cod",
+        itemsCount: o.items?.length || 0,
+        transactionId: o.paymentDetails?.razorpayPaymentId || o.paymentDetails?.razorpayOrderId || null,
+      };
+    });
+
+    // Fetch wishlist
+    const wishlistDoc = await Wishlist.findOne({ user: customer._id })
+      .populate("products", "name price images slug stock")
+      .lean();
+
+    res.json({
+      success: true,
+      customer: {
+        _id: customer._id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone || "",
+        role: customer.role || "user",
+        isActive: customer.isActive !== undefined ? customer.isActive : true,
+        addresses: Array.isArray(customer.addresses) ? customer.addresses : [],
+        createdAt: customer.createdAt,
+        updatedAt: customer.updatedAt,
+      },
+      orderSummary: {
+        totalOrders: rawOrders.length,
+        paidOrdersCount,
+        pendingOrdersCount,
+        deliveredOrdersCount,
+        cancelledOrdersCount,
+        totalPaid: Number(totalPaid.toFixed(2)),
+        totalPending: Number(totalPending.toFixed(2)),
+        productValue: Number(productValue.toFixed(2)),
+      },
+      orders: formattedOrders,
+      wishlist: {
+        count: wishlistDoc?.products?.length || 0,
+        items: wishlistDoc?.products || [],
+      },
+    });
+  } catch (error) {
+    console.error("[AdminController] getCustomerDetails error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch customer details.",
       error: error.message,
     });
   }

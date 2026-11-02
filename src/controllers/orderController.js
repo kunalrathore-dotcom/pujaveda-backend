@@ -7,6 +7,7 @@ import { paymentService } from "../services/paymentService.js";
 import { pricingService } from "../services/pricingService.js";
 import { couponService } from "../services/couponService.js";
 import { auditService } from "../services/auditService.js";
+import { isOrderPaidAndCollected, calculateOrderEligibleFee } from "./earningsController.js";
 
 export const quoteOrder = async (req, res) => {
   try {
@@ -210,10 +211,15 @@ export const getOrderById = async (req, res) => {
   const { id } = req.params;
 
   let order = null;
+  const populateFields = [
+    { path: "items.product", select: "name images price slug stock" },
+    { path: "user", select: "name email phone role createdAt" },
+  ];
+
   if (mongoose.Types.ObjectId.isValid(id)) {
-    order = await Order.findById(id).populate("items.product", "name images price");
+    order = await Order.findById(id).populate(populateFields);
   } else {
-    order = await Order.findOne({ orderNumber: id }).populate("items.product", "name images price");
+    order = await Order.findOne({ orderNumber: id }).populate(populateFields);
   }
 
   if (!order) {
@@ -224,16 +230,28 @@ export const getOrderById = async (req, res) => {
   }
 
   // Ensure customer can only view their own order
-  if (req.user.role !== "admin" && order.user.toString() !== req.user._id.toString()) {
+  if (req.user.role !== "admin" && order.user?._id?.toString() !== req.user._id.toString() && order.user?.toString() !== req.user._id.toString()) {
     return res.status(403).json({
       success: false,
       message: "Access denied. You can only view your own orders.",
     });
   }
 
+  const orderObj = order.toObject();
+  const isCollected = isOrderPaidAndCollected(order);
+  const customerPaid = isCollected ? Number(order.totalAmount || 0) : 0;
+  const adminFeeEarnings = isCollected ? calculateOrderEligibleFee(order) : 0;
+  const transactionId = order.paymentDetails?.razorpayPaymentId || order.paymentDetails?.razorpayOrderId || null;
+
+  orderObj.productValue = Number((order.subtotal || 0).toFixed(2));
+  orderObj.customerPaid = Number(customerPaid.toFixed(2));
+  orderObj.adminFeeEarnings = Number(adminFeeEarnings.toFixed(2));
+  orderObj.isCollected = isCollected;
+  orderObj.transactionId = transactionId;
+
   res.json({
     success: true,
-    order,
+    order: orderObj,
   });
 };
 
