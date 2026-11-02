@@ -1,5 +1,6 @@
 import multer from "multer";
 import { storageService } from "../services/storageService.js";
+import { created, badRequest } from "../utils/apiResponse.js";
 
 // Multer memoryStorage allows in-flight validation before any bytes hit disk
 const storage = multer.memoryStorage();
@@ -29,10 +30,7 @@ export const uploadMiddleware = multer({
 
 export const uploadImage = async (req, res) => {
   if (!req.file) {
-    return res.status(400).json({
-      success: false,
-      message: "Please select an image file to upload.",
-    });
+    return badRequest(res, "Please select an image file to upload.");
   }
 
   const folder = req.query.folder || "general";
@@ -46,9 +44,7 @@ export const uploadImage = async (req, res) => {
       req,
     });
 
-    res.status(201).json({
-      success: true,
-      message: "Image uploaded successfully.",
+    return created(res, "Image uploaded successfully.", {
       url: result.url,
       publicId: result.publicId,
       filename: result.filename,
@@ -56,19 +52,13 @@ export const uploadImage = async (req, res) => {
       provider: "local",
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message || "Failed to process and store image.",
-    });
+    return badRequest(res, error.message || "Failed to process and store image.");
   }
 };
 
 export const uploadMultipleImages = async (req, res) => {
   if (!req.files || req.files.length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: "Please select at least one image file to upload.",
-    });
+    return badRequest(res, "Please select at least one image file to upload.");
   }
 
   const folder = req.query.folder || "products";
@@ -102,16 +92,10 @@ export const uploadMultipleImages = async (req, res) => {
   }
 
   if (uploadedResults.length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: "All image uploads failed.",
-      errors,
-    });
+    return badRequest(res, "All image uploads failed.", errors);
   }
 
-  res.status(201).json({
-    success: true,
-    message: `Successfully uploaded ${uploadedResults.length} image(s).`,
+  return created(res, `Successfully uploaded ${uploadedResults.length} image(s).`, {
     images: uploadedResults,
     urls: uploadedResults.map((r) => r.url),
     publicIds: uploadedResults.map((r) => r.publicId),

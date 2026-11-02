@@ -3,6 +3,7 @@ import { Order } from "../models/Order.js";
 import { Wishlist } from "../models/Wishlist.js";
 import { storageService } from "../services/storageService.js";
 import { auditService } from "../services/auditService.js";
+import { ok, badRequest, notFound, serverError } from "../utils/apiResponse.js";
 
 /**
  * GET /api/user/profile
@@ -13,10 +14,7 @@ export const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-password").lean();
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User profile not found.",
-      });
+      return notFound(res, "User profile not found.");
     }
 
     const [totalOrders, wishlistDoc] = await Promise.all([
@@ -24,9 +22,7 @@ export const getProfile = async (req, res) => {
       Wishlist.findOne({ user: user._id }).select("products").lean(),
     ]);
 
-    return res.json({
-      success: true,
-      message: "Customer profile retrieved.",
+    return ok(res, "Customer profile retrieved.", {
       user: {
         _id: user._id,
         name: user.name,
@@ -46,11 +42,7 @@ export const getProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("[UserController] getProfile error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to retrieve profile.",
-      error: error.message,
-    });
+    return serverError(res, "Failed to retrieve profile.", error.message);
   }
 };
 
@@ -63,10 +55,7 @@ export const updateProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User profile not found.",
-      });
+      return notFound(res, "User profile not found.");
     }
 
     const { name, phone, addresses } = req.body;
@@ -79,10 +68,7 @@ export const updateProfile = async (req, res) => {
     }
     if (addresses !== undefined && Array.isArray(addresses)) {
       if (addresses.length > 3) {
-        return res.status(400).json({
-          success: false,
-          message: "You can save a maximum of 3 addresses in your account.",
-        });
+        return badRequest(res, "You can save a maximum of 3 addresses in your account.");
       }
       user.addresses = addresses.slice(0, 3).map((addr) => ({
         name: String(addr.name || "").trim(),
@@ -111,17 +97,10 @@ export const updateProfile = async (req, res) => {
     const userObj = user.toJSON ? user.toJSON() : user.toObject();
     delete userObj.password;
 
-    return res.json({
-      success: true,
-      message: "Profile updated successfully.",
-      user: userObj,
-    });
+    return ok(res, "Profile updated successfully.", { user: userObj });
   } catch (error) {
     console.error("[UserController] updateProfile error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to update profile.",
-    });
+    return serverError(res, error.message || "Failed to update profile.");
   }
 };
 
@@ -133,18 +112,12 @@ export const updateProfile = async (req, res) => {
 export const uploadAvatar = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "Please select an image file to upload as your profile photo.",
-      });
+      return badRequest(res, "Please select an image file to upload as your profile photo.");
     }
 
     const user = await User.findById(req.user._id);
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User profile not found.",
-      });
+      return notFound(res, "User profile not found.");
     }
 
     const result = await storageService.saveImage({
@@ -172,18 +145,13 @@ export const uploadAvatar = async (req, res) => {
     const userObj = user.toJSON ? user.toJSON() : user.toObject();
     delete userObj.password;
 
-    return res.json({
-      success: true,
-      message: "Profile photo updated successfully.",
+    return ok(res, "Profile photo updated successfully.", {
       avatar: result.url,
       user: userObj,
     });
   } catch (error) {
     console.error("[UserController] uploadAvatar error:", error);
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to upload avatar.",
-    });
+    return badRequest(res, error.message || "Failed to upload avatar.");
   }
 };
 

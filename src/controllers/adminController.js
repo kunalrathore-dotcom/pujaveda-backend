@@ -4,6 +4,7 @@ import { Order } from "../models/Order.js";
 import { User } from "../models/User.js";
 import { Wishlist } from "../models/Wishlist.js";
 import { isOrderPaidAndCollected, calculateOrderEligibleFee } from "./earningsController.js";
+import { ok, badRequest, notFound, serverError } from "../utils/apiResponse.js";
 
 /**
  * Aggregates real-time ecommerce dashboard metrics directly from MongoDB.
@@ -99,8 +100,7 @@ export const getDashboardStats = async (req, res) => {
       if (item._id) statusMap[item._id] = item.count;
     });
 
-    res.json({
-      success: true,
+    return ok(res, "Dashboard stats retrieved successfully", {
       stats: {
         totalProducts,
         totalOrders,
@@ -114,11 +114,7 @@ export const getDashboardStats = async (req, res) => {
     });
   } catch (error) {
     console.error("[AdminController] getDashboardStats error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to aggregate dashboard metrics from database.",
-      error: error.message,
-    });
+    return serverError(res, "Failed to aggregate dashboard metrics from database.", error.message);
   }
 };
 
@@ -171,18 +167,13 @@ export const getCustomers = async (req, res) => {
       })
     );
 
-    res.json({
-      success: true,
+    return ok(res, "Customers fetched successfully", {
       customers: customersWithStats,
       count: customersWithStats.length,
     });
   } catch (error) {
     console.error("[AdminController] getCustomers error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch customers from database.",
-      error: error.message,
-    });
+    return serverError(res, "Failed to fetch customers from database.", error.message);
   }
 };
 
@@ -194,18 +185,12 @@ export const getCustomerDetails = async (req, res) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid customer ID format.",
-      });
+      return badRequest(res, "Invalid customer ID format.");
     }
 
     const customer = await User.findById(id).select("-password").lean();
     if (!customer) {
-      return res.status(404).json({
-        success: false,
-        message: "Customer not found.",
-      });
+      return notFound(res, "Customer not found.");
     }
 
     // Fetch customer's actual orders
@@ -264,8 +249,7 @@ export const getCustomerDetails = async (req, res) => {
       .populate("products", "name price images slug stock")
       .lean();
 
-    res.json({
-      success: true,
+    return ok(res, "Customer details fetched successfully", {
       customer: {
         _id: customer._id,
         name: customer.name,
@@ -295,10 +279,6 @@ export const getCustomerDetails = async (req, res) => {
     });
   } catch (error) {
     console.error("[AdminController] getCustomerDetails error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch customer details.",
-      error: error.message,
-    });
+    return serverError(res, "Failed to fetch customer details.", error.message);
   }
 };

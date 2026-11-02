@@ -1,12 +1,10 @@
 import { Banner } from "../models/Banner.js";
 import { storageService } from "../services/storageService.js";
+import { ok, created, notFound } from "../utils/apiResponse.js";
 
 export const getBanners = async (req, res) => {
   const banners = await Banner.find({ active: true, isDeleted: { $ne: true } }).sort({ order: 1, createdAt: -1 });
-  res.json({
-    success: true,
-    banners,
-  });
+  return ok(res, "Banners retrieved successfully", { banners });
 };
 
 export const getAllBanners = async (req, res) => {
@@ -21,10 +19,7 @@ export const getAllBanners = async (req, res) => {
   }
 
   const banners = await Banner.find(filter).sort({ order: 1, createdAt: -1 });
-  res.json({
-    success: true,
-    banners,
-  });
+  return ok(res, "All banners retrieved successfully", { banners });
 };
 
 export const createBanner = async (req, res) => {
@@ -54,11 +49,7 @@ export const createBanner = async (req, res) => {
     order: Number(order || 0),
   });
 
-  res.status(201).json({
-    success: true,
-    message: "Banner created successfully.",
-    banner,
-  });
+  return created(res, "Banner created successfully.", { banner });
 };
 
 export const updateBanner = async (req, res) => {
@@ -66,10 +57,7 @@ export const updateBanner = async (req, res) => {
 
   const banner = await Banner.findById(id);
   if (!banner) {
-    return res.status(404).json({
-      success: false,
-      message: "Banner not found.",
-    });
+    return notFound(res, "Banner not found.");
   }
 
   const {
@@ -110,11 +98,7 @@ export const updateBanner = async (req, res) => {
 
   await banner.save();
 
-  res.json({
-    success: true,
-    message: "Banner updated successfully.",
-    banner,
-  });
+  return ok(res, "Banner updated successfully.", { banner });
 };
 
 export const deleteBanner = async (req, res) => {
@@ -122,10 +106,7 @@ export const deleteBanner = async (req, res) => {
 
   const banner = await Banner.findById(id);
   if (!banner) {
-    return res.status(404).json({
-      success: false,
-      message: "Banner not found.",
-    });
+    return notFound(res, "Banner not found.");
   }
 
   // Global Soft Delete: Retain image and record, mark isDeleted: true
@@ -135,10 +116,7 @@ export const deleteBanner = async (req, res) => {
   banner.active = false;
   await banner.save();
 
-  res.json({
-    success: true,
-    message: "Banner moved to trash successfully.",
-  });
+  return ok(res, "Banner moved to trash successfully.");
 };
 
 export const restoreBanner = async (req, res) => {
@@ -146,10 +124,7 @@ export const restoreBanner = async (req, res) => {
 
   const banner = await Banner.findById(id);
   if (!banner) {
-    return res.status(404).json({
-      success: false,
-      message: "Banner not found.",
-    });
+    return notFound(res, "Banner not found.");
   }
 
   banner.isDeleted = false;
@@ -157,8 +132,5 @@ export const restoreBanner = async (req, res) => {
   banner.deletedBy = null;
   await banner.save();
 
-  res.json({
-    success: true,
-    message: "Banner restored successfully.",
-  });
+  return ok(res, "Banner restored successfully.");
 };

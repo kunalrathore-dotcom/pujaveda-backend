@@ -1,3 +1,5 @@
+import { badRequest } from "../utils/apiResponse.js";
+
 export const validate = (schema, property = "body") => {
   return (req, res, next) => {
     const { error, value } = schema.validate(req[property], {
@@ -16,11 +18,7 @@ export const validate = (schema, property = "body") => {
         message: detail.message.replace(/['"]/g, ""),
       }));
 
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: formattedErrors,
-      });
+      return badRequest(res, "Validation failed", formattedErrors);
     }
 
     req[property] = value;
