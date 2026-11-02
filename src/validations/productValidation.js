@@ -1,16 +1,19 @@
 import Joi from "joi";
 
 export const createProductSchema = Joi.object({
-  name: Joi.string().trim().min(2).max(120).required().messages({
+  name: Joi.string().trim().min(2).max(100).required().messages({
     "string.empty": "Product name is required",
     "string.min": "Product name must be at least 2 characters",
-    "string.max": "Product name cannot exceed 120 characters",
+    "string.max": "Product name cannot exceed 100 characters",
   }),
   sku: Joi.string().trim().uppercase().max(50).allow("").optional(),
   categoryId: Joi.string().trim().required().messages({
     "string.empty": "Category ID or slug is required",
   }),
-  subcategoryId: Joi.string().trim().allow("").optional(),
+  subcategoryId: Joi.string().trim().required().messages({
+    "string.empty": "Subcategory is required",
+    "any.required": "Subcategory is required",
+  }),
   subcategoryName: Joi.string().trim().allow("").optional(),
   price: Joi.number().min(0).required().messages({
     "number.base": "Selling price must be a valid number",
@@ -44,7 +47,7 @@ export const createProductSchema = Joi.object({
 
   // Descriptions
   shortDescription: Joi.string().trim().max(250).allow("").optional(),
-  description: Joi.string().trim().max(5000).allow("").optional(),
+  description: Joi.string().trim().max(3000).allow("").optional(),
 
   // Devotional Specifications
   material: Joi.string().trim().max(100).allow("").optional(),
@@ -79,7 +82,7 @@ export const createProductSchema = Joi.object({
 });
 
 export const updateProductSchema = Joi.object({
-  name: Joi.string().trim().min(2).max(120).optional(),
+  name: Joi.string().trim().min(2).max(100).optional(),
   sku: Joi.string().trim().uppercase().max(50).allow("").optional(),
   categoryId: Joi.string().trim().optional(),
   subcategoryId: Joi.string().trim().allow("").optional(),
@@ -94,7 +97,7 @@ export const updateProductSchema = Joi.object({
   imageIds: Joi.array().items(Joi.string().trim()).optional(),
   primaryImage: Joi.string().trim().allow("").optional(),
   shortDescription: Joi.string().trim().max(250).allow("").optional(),
-  description: Joi.string().trim().max(5000).allow("").optional(),
+  description: Joi.string().trim().max(3000).allow("").optional(),
   material: Joi.string().trim().max(100).allow("").optional(),
   weight: Joi.string().trim().max(50).allow("").optional(),
   dimensions: Joi.string().trim().max(50).allow("").optional(),

@@ -227,16 +227,28 @@ export const createProduct = async (req, res) => {
     });
   }
 
-  // Validate subcategory if specified
-  let subName = subcategoryName || "";
-  if (subcategoryId && categoryDoc.subcategories?.length) {
-    const matchedSub = categoryDoc.subcategories.find(
-      (s) => s.slug === subcategoryId || s._id.toString() === subcategoryId
-    );
-    if (matchedSub) {
-      subName = matchedSub.name;
-    }
+  // Validate Subcategory (Mandatory and must belong to selected category)
+  if (!subcategoryId || !String(subcategoryId).trim()) {
+    return res.status(400).json({
+      success: false,
+      message: "Subcategory is required.",
+      errors: { subcategoryId: "Subcategory is required." },
+    });
   }
+
+  const matchedSub = (categoryDoc.subcategories || []).find(
+    (sub) => sub.slug === subcategoryId || sub._id?.toString() === subcategoryId || sub.id === subcategoryId
+  );
+
+  if (!matchedSub) {
+    return res.status(400).json({
+      success: false,
+      message: `Selected subcategory '${subcategoryId}' does not belong to category '${categoryDoc.name}'.`,
+      errors: { subcategoryId: `Selected subcategory '${subcategoryId}' does not belong to category '${categoryDoc.name}'.` },
+    });
+  }
+
+  const subName = matchedSub.name || subcategoryName || "";
 
   // Multiple Image Validation for published products (minimum 5 required)
   const imageList = Array.isArray(images) ? images : [];
@@ -332,6 +344,41 @@ export const updateProduct = async (req, res) => {
     }
     product.category = categoryDoc._id;
     product.categoryId = categoryDoc.slug;
+  }
+
+  if (data.categoryId !== undefined || data.subcategoryId !== undefined) {
+    const targetCatId = data.categoryId || product.categoryId || product.category;
+    let targetCatDoc = null;
+    if (mongoose.Types.ObjectId.isValid(targetCatId)) {
+      targetCatDoc = await Category.findById(targetCatId);
+    }
+    if (!targetCatDoc) {
+      targetCatDoc = await Category.findOne({ slug: String(targetCatId).toLowerCase().trim() });
+    }
+
+    const targetSubId = data.subcategoryId !== undefined ? data.subcategoryId : product.subcategoryId;
+    if (!targetSubId || !String(targetSubId).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Subcategory is required.",
+        errors: { subcategoryId: "Subcategory is required." },
+      });
+    }
+
+    if (targetCatDoc) {
+      const matched = (targetCatDoc.subcategories || []).find(
+        (sub) => sub.slug === targetSubId || sub._id?.toString() === targetSubId || sub.id === targetSubId
+      );
+      if (!matched) {
+        return res.status(400).json({
+          success: false,
+          message: `Selected subcategory '${targetSubId}' does not belong to category '${targetCatDoc.name}'.`,
+          errors: { subcategoryId: `Selected subcategory '${targetSubId}' does not belong to category '${targetCatDoc.name}'.` },
+        });
+      }
+      product.subcategoryId = targetSubId;
+      product.subcategoryName = matched.name;
+    }
   }
 
   if (data.name && data.name.trim() !== product.name) {

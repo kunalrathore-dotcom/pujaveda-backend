@@ -4,12 +4,12 @@ export const createChargeSchema = Joi.object({
   name: Joi.string()
     .trim()
     .min(2)
-    .max(100)
+    .max(60)
     .required()
     .messages({
       "string.empty": "Charge name is required",
       "string.min": "Charge name must be at least 2 characters",
-      "string.max": "Charge name cannot exceed 100 characters",
+      "string.max": "Charge name cannot exceed 60 characters",
     }),
   key: Joi.string()
     .trim()

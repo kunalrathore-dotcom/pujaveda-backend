@@ -13,7 +13,7 @@ export const getDivineCards = async (req, res) => {
     filter.$or.push({ categorySlug: category }, { categorySlug: "" }, { categorySlug: { $exists: false } });
   }
 
-  const cards = await DivineCard.find(filter).sort({ order: 1, createdAt: 1 });
+  const cards = await DivineCard.find(filter).sort({ createdAt: -1 });
   res.json({
     success: true,
     cards,
@@ -31,7 +31,7 @@ export const getAllDivineCards = async (req, res) => {
     filter.isDeleted = { $ne: true };
   }
 
-  const cards = await DivineCard.find(filter).sort({ order: 1, createdAt: 1 });
+  const cards = await DivineCard.find(filter).sort({ createdAt: -1 });
   res.json({
     success: true,
     cards,
@@ -39,6 +39,14 @@ export const getAllDivineCards = async (req, res) => {
 };
 
 export const createDivineCard = async (req, res) => {
+  const existingCount = await DivineCard.countDocuments({ isDeleted: { $ne: true } });
+  if (existingCount >= 2) {
+    return res.status(400).json({
+      success: false,
+      message: "Maximum 2 promotional assets allowed. Please move an existing card to trash before adding another.",
+    });
+  }
+
   const {
     title,
     pretitle,
@@ -50,8 +58,23 @@ export const createDivineCard = async (req, res) => {
     placement = "all",
     categorySlug = "",
     isActive = true,
-    order = 0,
   } = req.body;
+
+  const fieldErrors = {};
+  if (!title || !title.trim()) fieldErrors.title = "Card title is required";
+  if (!pretitle || !pretitle.trim()) fieldErrors.pretitle = "Pretitle is required";
+  if (!description || !description.trim()) fieldErrors.description = "Description is required";
+  if (!imageUrl) fieldErrors.imageUrl = "Promotional image is required";
+  if (!ctaText || !ctaText.trim()) fieldErrors.ctaText = "CTA button text is required";
+  if (!link || !link.trim()) fieldErrors.link = "Link URL is required";
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed. Please fill all required promotional card fields.",
+      fieldErrors,
+    });
+  }
 
   const card = await DivineCard.create({
     title: title ? title.trim() : "",
@@ -60,11 +83,10 @@ export const createDivineCard = async (req, res) => {
     imageUrl,
     imageId: imageId || "",
     ctaText: ctaText ? ctaText.trim() : "Explore Essentials",
-    link: link || "/category/puja-items",
+    link: link ? link.trim() : "/category/puja-items",
     placement: ["all", "homepage", "category"].includes(placement) ? placement : "all",
     categorySlug: categorySlug ? categorySlug.trim() : "",
     isActive: Boolean(isActive),
-    order: Number(order || 0),
   });
 
   res.status(201).json({
