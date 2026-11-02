@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { AuditLog } from "../models/AuditLog.js";
 import { User } from "../models/User.js";
 import { auditService } from "../services/auditService.js";
@@ -58,10 +59,40 @@ export const getAuditLogs = async (req, res) => {
 
     const skip = (Math.max(1, Number(page)) - 1) * Number(limit);
 
-    const [logs, total] = await Promise.all([
-      AuditLog.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+    const [rawLogs, total] = await Promise.all([
+      AuditLog.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)).lean(),
       AuditLog.countDocuments(query),
     ]);
+
+    // Extract distinct valid user ObjectIds
+    const userIds = [
+      ...new Set(
+        rawLogs
+          .map((l) => (l.user ? String(l.user) : null))
+          .filter((id) => id && mongoose.Types.ObjectId.isValid(id))
+      ),
+    ];
+
+    let userMap = new Map();
+    if (userIds.length > 0) {
+      const existingUsers = await User.find({ _id: { $in: userIds } })
+        .select("_id name email role isActive")
+        .lean();
+      userMap = new Map(existingUsers.map((u) => [String(u._id), u]));
+    }
+
+    const logs = rawLogs.map((log) => {
+      const rawUserId = log.user ? String(log.user) : null;
+      const userRef = rawUserId ? userMap.get(rawUserId) || null : null;
+      const isUserAvailable = Boolean(userRef);
+
+      return {
+        ...log,
+        userId: rawUserId,
+        userRef,
+        isUserAvailable,
+      };
+    });
 
     return ok(res, "Audit logs retrieved successfully.", {
       logs,
