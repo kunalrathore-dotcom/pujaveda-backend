@@ -10,6 +10,10 @@ import {
   updateSubcategory,
   deleteSubcategory,
   restoreSubcategory,
+  bulkDeleteCategories,
+  bulkRestoreCategories,
+  bulkDeleteSubcategories,
+  bulkRestoreSubcategories,
 } from "../controllers/categoryController.js";
 import { validate } from "../middleware/validate.js";
 import { authenticate, requireAdmin } from "../middleware/auth.js";
@@ -25,6 +29,10 @@ import {
 const router = express.Router();
 
 router.get("/", getCategories);
+router.post("/bulk-trash", authenticate, requireAdmin, bulkDeleteCategories);
+router.post("/bulk-restore", authenticate, requireAdmin, bulkRestoreCategories);
+router.post("/subcategories/bulk-trash", authenticate, requireAdmin, bulkDeleteSubcategories);
+router.post("/subcategories/bulk-restore", authenticate, requireAdmin, bulkRestoreSubcategories);
 router.get("/:id", validate(categoryIdParamSchema, "params"), getCategoryById);
 
 router.post("/", authenticate, requireAdmin, validate(createCategorySchema), createCategory);

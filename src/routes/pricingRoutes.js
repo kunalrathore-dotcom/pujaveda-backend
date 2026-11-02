@@ -7,6 +7,8 @@ import {
   toggleChargeStatus,
   deleteCharge,
   restoreCharge,
+  bulkDeleteCharges,
+  bulkRestoreCharges,
 } from "../controllers/pricingController.js";
 import { authenticate, requireAdmin } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
@@ -20,6 +22,8 @@ router.get("/active", getActiveCharges);
 // Admin Tax & Fee Management routes
 router.get("/", authenticate, requireAdmin, getAllCharges);
 router.post("/", authenticate, requireAdmin, validate(createChargeSchema), createCharge);
+router.post("/bulk-trash", authenticate, requireAdmin, bulkDeleteCharges);
+router.post("/bulk-restore", authenticate, requireAdmin, bulkRestoreCharges);
 router.put("/:id", authenticate, requireAdmin, validate(updateChargeSchema), updateCharge);
 router.patch("/:id/status", authenticate, requireAdmin, toggleChargeStatus);
 router.put("/:id/restore", authenticate, requireAdmin, restoreCharge);

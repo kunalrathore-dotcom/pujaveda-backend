@@ -211,23 +211,24 @@ export const createProduct = async (req, res) => {
     faqs,
   } = req.body;
 
-  // Resolve category by ObjectId or slug
+  // Resolve category by ObjectId or slug (must not be in trash)
   let categoryDoc = null;
   if (mongoose.Types.ObjectId.isValid(categoryId)) {
-    categoryDoc = await Category.findById(categoryId);
+    categoryDoc = await Category.findOne({ _id: categoryId, isDeleted: { $ne: true } });
   }
   if (!categoryDoc) {
-    categoryDoc = await Category.findOne({ slug: categoryId.toLowerCase().trim() });
+    categoryDoc = await Category.findOne({ slug: categoryId.toLowerCase().trim(), isDeleted: { $ne: true } });
   }
 
   if (!categoryDoc) {
     return res.status(400).json({
       success: false,
-      message: `Referenced category '${categoryId}' does not exist.`,
+      message: `Referenced category '${categoryId}' does not exist or has been moved to trash.`,
+      errors: { categoryId: "Selected category is not available or is currently in trash." },
     });
   }
 
-  // Validate Subcategory (Mandatory and must belong to selected category)
+  // Validate Subcategory (Mandatory and must belong to selected category and not be in trash)
   if (!subcategoryId || !String(subcategoryId).trim()) {
     return res.status(400).json({
       success: false,
@@ -237,14 +238,14 @@ export const createProduct = async (req, res) => {
   }
 
   const matchedSub = (categoryDoc.subcategories || []).find(
-    (sub) => sub.slug === subcategoryId || sub._id?.toString() === subcategoryId || sub.id === subcategoryId
+    (sub) => (sub.slug === subcategoryId || sub._id?.toString() === subcategoryId || sub.id === subcategoryId) && sub.isDeleted !== true
   );
 
   if (!matchedSub) {
     return res.status(400).json({
       success: false,
-      message: `Selected subcategory '${subcategoryId}' does not belong to category '${categoryDoc.name}'.`,
-      errors: { subcategoryId: `Selected subcategory '${subcategoryId}' does not belong to category '${categoryDoc.name}'.` },
+      message: `Selected subcategory '${subcategoryId}' does not belong to category '${categoryDoc.name}' or is currently in trash.`,
+      errors: { subcategoryId: `Selected subcategory '${subcategoryId}' does not belong to category '${categoryDoc.name}' or is in trash.` },
     });
   }
 
@@ -350,10 +351,18 @@ export const updateProduct = async (req, res) => {
     const targetCatId = data.categoryId || product.categoryId || product.category;
     let targetCatDoc = null;
     if (mongoose.Types.ObjectId.isValid(targetCatId)) {
-      targetCatDoc = await Category.findById(targetCatId);
+      targetCatDoc = await Category.findOne({ _id: targetCatId, isDeleted: { $ne: true } });
     }
     if (!targetCatDoc) {
-      targetCatDoc = await Category.findOne({ slug: String(targetCatId).toLowerCase().trim() });
+      targetCatDoc = await Category.findOne({ slug: String(targetCatId).toLowerCase().trim(), isDeleted: { $ne: true } });
+    }
+
+    if (!targetCatDoc) {
+      return res.status(400).json({
+        success: false,
+        message: `Category '${targetCatId}' not found or is currently in trash.`,
+        errors: { categoryId: "Category is not available or is in trash." },
+      });
     }
 
     const targetSubId = data.subcategoryId !== undefined ? data.subcategoryId : product.subcategoryId;
@@ -365,20 +374,18 @@ export const updateProduct = async (req, res) => {
       });
     }
 
-    if (targetCatDoc) {
-      const matched = (targetCatDoc.subcategories || []).find(
-        (sub) => sub.slug === targetSubId || sub._id?.toString() === targetSubId || sub.id === targetSubId
-      );
-      if (!matched) {
-        return res.status(400).json({
-          success: false,
-          message: `Selected subcategory '${targetSubId}' does not belong to category '${targetCatDoc.name}'.`,
-          errors: { subcategoryId: `Selected subcategory '${targetSubId}' does not belong to category '${targetCatDoc.name}'.` },
-        });
-      }
-      product.subcategoryId = targetSubId;
-      product.subcategoryName = matched.name;
+    const matched = (targetCatDoc.subcategories || []).find(
+      (sub) => (sub.slug === targetSubId || sub._id?.toString() === targetSubId || sub.id === targetSubId) && sub.isDeleted !== true
+    );
+    if (!matched) {
+      return res.status(400).json({
+        success: false,
+        message: `Selected subcategory '${targetSubId}' does not belong to category '${targetCatDoc.name}' or is currently in trash.`,
+        errors: { subcategoryId: `Selected subcategory '${targetSubId}' does not belong to category '${targetCatDoc.name}' or is in trash.` },
+      });
     }
+    product.subcategoryId = targetSubId;
+    product.subcategoryName = matched.name;
   }
 
   if (data.name && data.name.trim() !== product.name) {
@@ -508,4 +515,38 @@ export const restoreProduct = async (req, res) => {
     success: true,
     message: "Product restored successfully.",
   });
+};
+
+export const bulkDeleteProducts = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const filter = {};
+    if (Array.isArray(ids) && ids.length > 0) {
+      filter._id = { $in: ids };
+    } else {
+      filter.isDeleted = { $ne: true };
+    }
+    const result = await Product.updateMany(filter, {
+      $set: { isDeleted: true, deletedAt: new Date(), deletedBy: req.user?._id || null, isPublished: false },
+    });
+    return res.json({ success: true, message: `${result.modifiedCount} product(s) moved to trash.` });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const bulkRestoreProducts = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const filter = { isDeleted: true };
+    if (Array.isArray(ids) && ids.length > 0) {
+      filter._id = { $in: ids };
+    }
+    const result = await Product.updateMany(filter, {
+      $set: { isDeleted: false, deletedAt: null, deletedBy: null },
+    });
+    return res.json({ success: true, message: `${result.modifiedCount} product(s) restored successfully.` });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
 };

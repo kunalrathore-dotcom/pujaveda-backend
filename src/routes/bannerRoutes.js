@@ -6,6 +6,8 @@ import {
   updateBanner,
   deleteBanner,
   restoreBanner,
+  bulkDeleteBanners,
+  bulkRestoreBanners,
 } from "../controllers/bannerController.js";
 import { validate } from "../middleware/validate.js";
 import { authenticate, requireAdmin } from "../middleware/auth.js";
@@ -21,6 +23,8 @@ router.get("/", getBanners);
 router.get("/all", authenticate, requireAdmin, getAllBanners);
 
 router.post("/", authenticate, requireAdmin, validate(createBannerSchema), createBanner);
+router.post("/bulk-trash", authenticate, requireAdmin, bulkDeleteBanners);
+router.post("/bulk-restore", authenticate, requireAdmin, bulkRestoreBanners);
 router.put(
   "/:id",
   authenticate,

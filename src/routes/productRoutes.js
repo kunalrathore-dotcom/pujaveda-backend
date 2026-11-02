@@ -6,6 +6,8 @@ import {
   updateProduct,
   deleteProduct,
   restoreProduct,
+  bulkDeleteProducts,
+  bulkRestoreProducts,
 } from "../controllers/productController.js";
 import { validate } from "../middleware/validate.js";
 import { authenticate, requireAdmin } from "../middleware/auth.js";
@@ -22,6 +24,8 @@ router.get("/", validate(productQuerySchema, "query"), getProducts);
 router.get("/:id", validate(productIdParamSchema, "params"), getProductById);
 
 router.post("/", authenticate, requireAdmin, validate(createProductSchema), createProduct);
+router.post("/bulk-trash", authenticate, requireAdmin, bulkDeleteProducts);
+router.post("/bulk-restore", authenticate, requireAdmin, bulkRestoreProducts);
 router.put(
   "/:id",
   authenticate,

@@ -311,6 +311,40 @@ export const restoreCoupon = async (req, res) => {
   }
 };
 
+export const bulkDeleteCoupons = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const filter = {};
+    if (Array.isArray(ids) && ids.length > 0) {
+      filter._id = { $in: ids };
+    } else {
+      filter.isDeleted = { $ne: true };
+    }
+    const result = await Coupon.updateMany(filter, {
+      $set: { isDeleted: true, deletedAt: new Date(), deletedBy: req.user?._id || null, isActive: false },
+    });
+    return ok(res, `${result.modifiedCount} coupon(s) moved to trash.`);
+  } catch (err) {
+    return serverError(res, err.message);
+  }
+};
+
+export const bulkRestoreCoupons = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const filter = { isDeleted: true };
+    if (Array.isArray(ids) && ids.length > 0) {
+      filter._id = { $in: ids };
+    }
+    const result = await Coupon.updateMany(filter, {
+      $set: { isDeleted: false, deletedAt: null, deletedBy: null },
+    });
+    return ok(res, `${result.modifiedCount} coupon(s) restored successfully.`);
+  } catch (err) {
+    return serverError(res, err.message);
+  }
+};
+
 export const toggleCouponStatus = async (req, res) => {
   try {
     const { id } = req.params;

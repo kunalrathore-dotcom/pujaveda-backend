@@ -443,3 +443,123 @@ export const restoreSubcategory = async (req, res) => {
     subcategory: sub,
   });
 };
+
+export const bulkDeleteCategories = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const filter = {};
+    if (Array.isArray(ids) && ids.length > 0) {
+      filter._id = { $in: ids };
+    } else {
+      filter.isDeleted = { $ne: true };
+    }
+    const result = await Category.updateMany(filter, {
+      $set: { isDeleted: true, deletedAt: new Date(), deletedBy: req.user?._id || null, isActive: false },
+    });
+    return res.json({ success: true, message: `${result.modifiedCount} category(ies) moved to trash.` });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const bulkRestoreCategories = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const filter = { isDeleted: true };
+    if (Array.isArray(ids) && ids.length > 0) {
+      filter._id = { $in: ids };
+    }
+    const result = await Category.updateMany(filter, {
+      $set: { isDeleted: false, deletedAt: null, deletedBy: null },
+    });
+    return res.json({ success: true, message: `${result.modifiedCount} category(ies) restored successfully.` });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const bulkDeleteSubcategories = async (req, res) => {
+  try {
+    const { items } = req.body;
+    let modified = 0;
+    if (Array.isArray(items) && items.length > 0) {
+      for (const item of items) {
+        const cat = await Category.findById(item.categoryId);
+        if (cat) {
+          const sub = cat.subcategories.find(
+            (s) => s._id.toString() === item.subcategoryId || s.slug === item.subcategoryId
+          );
+          if (sub && !sub.isDeleted) {
+            sub.isDeleted = true;
+            sub.deletedAt = new Date();
+            sub.deletedBy = req.user?._id || null;
+            sub.isActive = false;
+            await cat.save();
+            modified++;
+          }
+        }
+      }
+    } else {
+      const cats = await Category.find({ "subcategories.isDeleted": { $ne: true } });
+      for (const cat of cats) {
+        let changed = false;
+        for (const sub of cat.subcategories) {
+          if (!sub.isDeleted) {
+            sub.isDeleted = true;
+            sub.deletedAt = new Date();
+            sub.deletedBy = req.user?._id || null;
+            sub.isActive = false;
+            changed = true;
+            modified++;
+          }
+        }
+        if (changed) await cat.save();
+      }
+    }
+    return res.json({ success: true, message: `${modified} subcategory(ies) moved to trash.` });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const bulkRestoreSubcategories = async (req, res) => {
+  try {
+    const { items } = req.body;
+    let modified = 0;
+    if (Array.isArray(items) && items.length > 0) {
+      for (const item of items) {
+        const cat = await Category.findById(item.categoryId);
+        if (cat) {
+          const sub = cat.subcategories.find(
+            (s) => s._id.toString() === item.subcategoryId || s.slug === item.subcategoryId
+          );
+          if (sub && sub.isDeleted) {
+            sub.isDeleted = false;
+            sub.deletedAt = null;
+            sub.deletedBy = null;
+            await cat.save();
+            modified++;
+          }
+        }
+      }
+    } else {
+      const cats = await Category.find({ "subcategories.isDeleted": true });
+      for (const cat of cats) {
+        let changed = false;
+        for (const sub of cat.subcategories) {
+          if (sub.isDeleted) {
+            sub.isDeleted = false;
+            sub.deletedAt = null;
+            sub.deletedBy = null;
+            changed = true;
+            modified++;
+          }
+        }
+        if (changed) await cat.save();
+      }
+    }
+    return res.json({ success: true, message: `${modified} subcategory(ies) restored successfully.` });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};

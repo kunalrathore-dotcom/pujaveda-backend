@@ -6,6 +6,8 @@ import {
   updateDivineCard,
   deleteDivineCard,
   restoreDivineCard,
+  bulkDeleteDivineCards,
+  bulkRestoreDivineCards,
 } from "../controllers/divineCardController.js";
 import {
   getFestivalCollections,
@@ -29,6 +31,8 @@ const router = express.Router();
 // Divine Cards
 router.get("/divine-cards", getDivineCards);
 router.get("/divine-cards/all", authenticate, requireAdmin, getAllDivineCards);
+router.post("/divine-cards/bulk-trash", authenticate, requireAdmin, bulkDeleteDivineCards);
+router.post("/divine-cards/bulk-restore", authenticate, requireAdmin, bulkRestoreDivineCards);
 router.post(
   "/divine-cards",
   authenticate,

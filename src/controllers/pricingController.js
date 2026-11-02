@@ -37,33 +37,70 @@ export const getActiveCharges = async (req, res) => {
 
 export const createCharge = async (req, res) => {
   try {
-    const { key, name, type, value, calculationBasis = "discounted_subtotal", description = "", isActive = true } = req.body;
+    const { key, name, type, value, calculationBasis, description = "", isActive = true } = req.body;
 
-    if (!key || !name) {
-      return badRequest(res, "Key and name are required.");
+    const fieldErrors = {};
+    if (!name || !name.trim()) {
+      fieldErrors.name = "Surcharge name is required.";
+    } else if (name.trim().length < 2 || name.trim().length > 60) {
+      fieldErrors.name = "Surcharge name must be between 2 and 60 characters.";
+    }
+
+    if (!key || !key.trim()) {
+      fieldErrors.key = "Unique identifier key is required.";
+    } else if (key.trim().length < 2 || key.trim().length > 40) {
+      fieldErrors.key = "Charge key must be between 2 and 40 characters.";
+    }
+
+    if (!type || !["percentage", "fixed", "flat"].includes(type)) {
+      fieldErrors.type = "Surcharge type is required (percentage or fixed).";
+    }
+
+    if (value === undefined || value === null || value === "" || String(value).trim() === "") {
+      fieldErrors.value = "Surcharge amount or rate is required.";
+    } else {
+      const numValue = Number(value);
+      if (!Number.isFinite(numValue) || isNaN(numValue)) {
+        fieldErrors.value = "Surcharge amount or rate must be a valid number.";
+      } else if (numValue <= 0) {
+        fieldErrors.value = "Surcharge amount or rate must be greater than zero.";
+      } else if (type === "percentage" && numValue > 100) {
+        fieldErrors.value = "Percentage surcharge rate cannot exceed 100%.";
+      } else if (numValue > 50000) {
+        fieldErrors.value = "Fixed surcharge amount cannot exceed ₹50,000.";
+      }
+    }
+
+    const calcBasis = type === "fixed" ? "fixed" : (calculationBasis || "discounted_subtotal");
+    if (type === "percentage" && !calculationBasis) {
+      fieldErrors.calculationBasis = "Calculation type is required.";
+    }
+
+    if (description && description.trim().length > 300) {
+      fieldErrors.description = "Customer explanation description cannot exceed 300 characters.";
+    }
+
+    if (Object.keys(fieldErrors).length > 0) {
+      const primary = Object.values(fieldErrors)[0];
+      return badRequest(res, primary, fieldErrors);
     }
 
     const cleanKey = key.trim().toLowerCase().replace(/[^a-z0-9_]/g, "_");
     const existing = await PricingCharge.findOne({ key: cleanKey });
     if (existing) {
-      return badRequest(res, `A charge with key '${cleanKey}' already exists.`);
+      return badRequest(res, `A surcharge with key '${cleanKey}' already exists.`, {
+        key: `A surcharge with key '${cleanKey}' already exists.`,
+      });
     }
 
-    const numValue = Number(value);
-    if (!Number.isFinite(numValue) || numValue < 0) {
-      return badRequest(res, "Charge value must be a non-negative number.");
-    }
-
-    if (type === "percentage" && numValue > 100) {
-      return badRequest(res, "Percentage charge rate cannot exceed 100%.");
-    }
+    const numValue = Math.round(Number(value) * 100) / 100;
 
     const charge = await PricingCharge.create({
       key: cleanKey,
       name: name.trim(),
       type: type === "fixed" ? "fixed" : "percentage",
       value: numValue,
-      calculationBasis,
+      calculationBasis: calcBasis,
       description: description.trim(),
       isActive: Boolean(isActive),
     });
@@ -236,6 +273,40 @@ export const restoreCharge = async (req, res) => {
     return ok(res, "Pricing charge restored successfully.");
   } catch (error) {
     console.error("[PricingController] restoreCharge error:", error);
+    return serverError(res, error.message);
+  }
+};
+
+export const bulkDeleteCharges = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const filter = { key: { $nin: ["gst", "platform_fee"] } };
+    if (Array.isArray(ids) && ids.length > 0) {
+      filter._id = { $in: ids };
+    } else {
+      filter.isDeleted = { $ne: true };
+    }
+    const result = await PricingCharge.updateMany(filter, {
+      $set: { isDeleted: true, deletedAt: new Date(), deletedBy: req.user?._id || null, isActive: false },
+    });
+    return ok(res, `${result.modifiedCount} surcharge(s) moved to trash.`);
+  } catch (error) {
+    return serverError(res, error.message);
+  }
+};
+
+export const bulkRestoreCharges = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const filter = { isDeleted: true };
+    if (Array.isArray(ids) && ids.length > 0) {
+      filter._id = { $in: ids };
+    }
+    const result = await PricingCharge.updateMany(filter, {
+      $set: { isDeleted: false, deletedAt: null, deletedBy: null },
+    });
+    return ok(res, `${result.modifiedCount} surcharge(s) restored successfully.`);
+  } catch (error) {
     return serverError(res, error.message);
   }
 };

@@ -5,6 +5,8 @@ import {
   updateCoupon,
   deleteCoupon,
   restoreCoupon,
+  bulkDeleteCoupons,
+  bulkRestoreCoupons,
   toggleCouponStatus,
   getCouponUsages,
   validateCoupon,
@@ -28,6 +30,8 @@ router.post("/apply", optionalAuthenticate, validate(validateCouponSchema), vali
 // Admin Coupon Management routes
 router.get("/", authenticate, requireAdmin, getCoupons);
 router.post("/", authenticate, requireAdmin, validate(createCouponSchema), createCoupon);
+router.post("/bulk-trash", authenticate, requireAdmin, bulkDeleteCoupons);
+router.post("/bulk-restore", authenticate, requireAdmin, bulkRestoreCoupons);
 router.get("/:id/usages", authenticate, requireAdmin, getCouponUsages);
 router.put("/:id", authenticate, requireAdmin, validate(updateCouponSchema), updateCoupon);
 router.patch("/:id/status", authenticate, requireAdmin, toggleCouponStatus);

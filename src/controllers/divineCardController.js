@@ -196,3 +196,37 @@ export const restoreDivineCard = async (req, res) => {
   });
 };
 
+export const bulkDeleteDivineCards = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const filter = {};
+    if (Array.isArray(ids) && ids.length > 0) {
+      filter._id = { $in: ids };
+    } else {
+      filter.isDeleted = { $ne: true };
+    }
+    const result = await DivineCard.updateMany(filter, {
+      $set: { isDeleted: true, deletedAt: new Date(), deletedBy: req.user?._id || null, isActive: false },
+    });
+    return res.json({ success: true, message: `${result.modifiedCount} promotional card(s) moved to trash.` });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const bulkRestoreDivineCards = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const filter = { isDeleted: true };
+    if (Array.isArray(ids) && ids.length > 0) {
+      filter._id = { $in: ids };
+    }
+    const result = await DivineCard.updateMany(filter, {
+      $set: { isDeleted: false, deletedAt: null, deletedBy: null },
+    });
+    return res.json({ success: true, message: `${result.modifiedCount} promotional card(s) restored successfully.` });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+

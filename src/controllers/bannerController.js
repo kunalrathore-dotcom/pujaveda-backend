@@ -134,3 +134,37 @@ export const restoreBanner = async (req, res) => {
 
   return ok(res, "Banner restored successfully.");
 };
+
+export const bulkDeleteBanners = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const filter = {};
+    if (Array.isArray(ids) && ids.length > 0) {
+      filter._id = { $in: ids };
+    } else {
+      filter.isDeleted = { $ne: true };
+    }
+    const result = await Banner.updateMany(filter, {
+      $set: { isDeleted: true, deletedAt: new Date(), deletedBy: req.user?._id || null, active: false },
+    });
+    return ok(res, `${result.modifiedCount} banner(s) moved to trash.`);
+  } catch (err) {
+    return serverError(res, err.message);
+  }
+};
+
+export const bulkRestoreBanners = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const filter = { isDeleted: true };
+    if (Array.isArray(ids) && ids.length > 0) {
+      filter._id = { $in: ids };
+    }
+    const result = await Banner.updateMany(filter, {
+      $set: { isDeleted: false, deletedAt: null, deletedBy: null },
+    });
+    return ok(res, `${result.modifiedCount} banner(s) restored successfully.`);
+  } catch (err) {
+    return serverError(res, err.message);
+  }
+};

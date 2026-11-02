@@ -1,10 +1,10 @@
 import Joi from "joi";
 
 export const createProductSchema = Joi.object({
-  name: Joi.string().trim().min(2).max(100).required().messages({
+  name: Joi.string().trim().min(2).max(80).required().messages({
     "string.empty": "Product name is required",
     "string.min": "Product name must be at least 2 characters",
-    "string.max": "Product name cannot exceed 100 characters",
+    "string.max": "Product name cannot exceed 80 characters",
   }),
   sku: Joi.string().trim().uppercase().max(50).allow("").optional(),
   categoryId: Joi.string().trim().required().messages({
@@ -82,7 +82,7 @@ export const createProductSchema = Joi.object({
 });
 
 export const updateProductSchema = Joi.object({
-  name: Joi.string().trim().min(2).max(100).optional(),
+  name: Joi.string().trim().min(2).max(80).optional(),
   sku: Joi.string().trim().uppercase().max(50).allow("").optional(),
   categoryId: Joi.string().trim().optional(),
   subcategoryId: Joi.string().trim().allow("").optional(),
