@@ -105,26 +105,34 @@ app.get("/api/health", async (req, res) => {
   });
 });
 
-// Diagnostic Email Health Check (Brevo REST API / SMTP)
-app.get(["/api/health/email", "/api/health/smtp"], async (req, res) => {
-  const { verifyEmailServiceDetailed } = await import("./services/emailService.js");
-  const result = await verifyEmailServiceDetailed();
+// Dedicated Brevo REST API Health & Diagnostic Endpoint
+app.get("/api/health/email", async (req, res) => {
+  const { checkBrevoAccountDetailed } = await import("./services/emailService.js");
+  const result = await checkBrevoAccountDetailed();
+  res.status(result.status === "authenticated" ? 200 : 503).json(result);
+});
+
+// Dedicated Legacy SMTP Health & Diagnostic Endpoint
+app.get("/api/health/smtp", async (req, res) => {
+  const { checkSmtpDetailed } = await import("./services/emailService.js");
+  const result = await checkSmtpDetailed();
   res.status(result.connected ? 200 : 503).json(result);
 });
 
-// Diagnostic SMTP Send Test (safe: only sends to configured SMTP_USER/care)
-app.get("/api/health/smtp/test-send", async (req, res) => {
-  const { sendEmail } = await import("./services/emailService.js");
-  const targetEmail = process.env.SMTP_USER || "support.youngdecade@gmail.com";
+// Diagnostic Send Test (uses active transport: Brevo REST API or local SMTP)
+app.get(["/api/health/email/test-send", "/api/health/smtp/test-send"], async (req, res) => {
+  const { sendEmail, isBrevoApiConfigured } = await import("./services/emailService.js");
+  const targetEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || "care@pujaveda.in";
   try {
     const info = await sendEmail({
       to: targetEmail,
       subject: "Pujaveda Render Live Delivery Test",
-      text: "Testing real email delivery from deployed Render instance.",
-      html: "<p>Testing real email delivery from deployed Render instance.</p>",
+      text: `Testing real email delivery from deployed Render instance. Transport: ${isBrevoApiConfigured() ? "Brevo REST API" : "SMTP"}`,
+      html: `<p>Testing real email delivery from deployed Render instance.</p><p><strong>Transport:</strong> ${isBrevoApiConfigured() ? "Brevo REST API v3 (HTTPS 443)" : "SMTP"}</p>`,
     });
     res.json({
       success: true,
+      provider: info.provider || (isBrevoApiConfigured() ? "brevo_rest_api" : "smtp"),
       messageId: info.messageId,
       response: info.response,
       accepted: info.accepted,
