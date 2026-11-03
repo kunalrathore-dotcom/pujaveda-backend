@@ -3,6 +3,7 @@ import { Blog } from "../models/Blog.js";
 import { BlogCategory } from "../models/BlogCategory.js";
 import { BLOG_CATEGORIES } from "../constants/blogCategories.js";
 import { sanitizeArticleHtml } from "../utils/sanitizeHtml.js";
+import { extractMeaningfulText } from "../validations/blogValidation.js";
 import {
   ok,
   created,
@@ -53,12 +54,29 @@ export const createArticle = async (req, res) => {
       });
     }
 
-    // 2. Sanitize HTML content
+    // 2. Sanitize HTML content & enforce character constraints
     const sanitizedContent = sanitizeArticleHtml(content);
-    if (!sanitizedContent || sanitizedContent.length < 10) {
-      return badRequest(res, "Article content must contain at least 10 valid characters.", {
-        content: "Article content must contain at least 10 valid characters.",
+    if (!sanitizedContent || !sanitizedContent.trim()) {
+      return badRequest(res, "Article content is required.", {
+        content: "Article content is required.",
       });
+    }
+
+    if (sanitizedContent.length > 20000) {
+      return badRequest(res, "Article content cannot exceed 20,000 characters.", {
+        content: "Article content cannot exceed 20,000 characters.",
+      });
+    }
+
+    const plainText = extractMeaningfulText(sanitizedContent);
+    if (plainText.length < 100) {
+      return badRequest(
+        res,
+        `Article content must contain at least 100 characters of meaningful text (currently ${plainText.length} character${plainText.length === 1 ? "" : "s"}).`,
+        {
+          content: `Article content must contain at least 100 characters of meaningful text (currently ${plainText.length} character${plainText.length === 1 ? "" : "s"}).`,
+        }
+      );
     }
 
     const articleStatus = status === "published" ? "published" : "draft";
@@ -271,10 +289,27 @@ export const updateArticle = async (req, res) => {
 
     if (content !== undefined) {
       const sanitized = sanitizeArticleHtml(content);
-      if (!sanitized || sanitized.length < 10) {
-        return badRequest(res, "Article content must contain at least 10 valid characters.", {
-          content: "Article content must contain at least 10 valid characters.",
+      if (!sanitized || !sanitized.trim()) {
+        return badRequest(res, "Article content cannot be empty.", {
+          content: "Article content cannot be empty.",
         });
+      }
+
+      if (sanitized.length > 20000) {
+        return badRequest(res, "Article content cannot exceed 20,000 characters.", {
+          content: "Article content cannot exceed 20,000 characters.",
+        });
+      }
+
+      const plainText = extractMeaningfulText(sanitized);
+      if (plainText.length < 100) {
+        return badRequest(
+          res,
+          `Article content must contain at least 100 characters of meaningful text (currently ${plainText.length} character${plainText.length === 1 ? "" : "s"}).`,
+          {
+            content: `Article content must contain at least 100 characters of meaningful text (currently ${plainText.length} character${plainText.length === 1 ? "" : "s"}).`,
+          }
+        );
       }
       article.content = sanitized;
     }

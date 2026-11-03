@@ -2,6 +2,41 @@ import Joi from "joi";
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+/**
+ * Extracts plain text from HTML and normalizes whitespace
+ * ensuring markup like <p><br></p> or &nbsp; doesn't count towards content requirement.
+ */
+export const extractMeaningfulText = (htmlOrText) => {
+  if (!htmlOrText || typeof htmlOrText !== "string") return "";
+  return htmlOrText
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&#160;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+/**
+ * Custom Joi validator for blog article content:
+ * - Must not exceed 20,000 total characters.
+ * - Must contain at least 100 characters of meaningful plain text.
+ */
+export const validateArticleContent = (value, helpers) => {
+  if (!value || typeof value !== "string" || !value.trim()) {
+    return helpers.error("string.empty");
+  }
+  if (value.length > 20000) {
+    return helpers.error("string.max");
+  }
+  const plainText = extractMeaningfulText(value);
+  if (plainText.length < 100) {
+    return helpers.message(
+      `Article content must contain at least 100 characters of meaningful text (currently ${plainText.length} character${plainText.length === 1 ? "" : "s"}).`
+    );
+  }
+  return value;
+};
+
 export const createBlogCategorySchema = Joi.object({
   name: Joi.string().trim().min(2).max(40).required().messages({
     "string.base": "Category name must be a valid text string.",
@@ -116,13 +151,17 @@ export const createBlogSchema = Joi.object({
     "any.required": "Cover image is required.",
   }),
 
-  content: Joi.string().trim().min(10).max(20000).required().messages({
-    "string.base": "Article content must be a valid text string.",
-    "string.empty": "Article content is required.",
-    "string.min": "Article content must be at least 10 characters.",
-    "string.max": "Article content cannot exceed 20,000 characters.",
-    "any.required": "Article content is required.",
-  }),
+  content: Joi.string()
+    .trim()
+    .max(20000)
+    .required()
+    .custom(validateArticleContent, "Meaningful content validation")
+    .messages({
+      "string.base": "Article content must be a valid text string.",
+      "string.empty": "Article content is required.",
+      "string.max": "Article content cannot exceed 20,000 characters.",
+      "any.required": "Article content is required.",
+    }),
 
   seoTitle: Joi.string().trim().max(70).allow("").optional().messages({
     "string.max": "SEO title cannot exceed 70 characters.",
@@ -184,12 +223,16 @@ export const updateBlogSchema = Joi.object({
     "string.empty": "Cover image cannot be empty.",
   }),
 
-  content: Joi.string().trim().min(10).max(20000).optional().messages({
-    "string.base": "Article content must be a valid text string.",
-    "string.empty": "Article content cannot be empty.",
-    "string.min": "Article content must be at least 10 characters.",
-    "string.max": "Article content cannot exceed 20,000 characters.",
-  }),
+  content: Joi.string()
+    .trim()
+    .max(20000)
+    .optional()
+    .custom(validateArticleContent, "Meaningful content validation")
+    .messages({
+      "string.base": "Article content must be a valid text string.",
+      "string.empty": "Article content cannot be empty.",
+      "string.max": "Article content cannot exceed 20,000 characters.",
+    }),
 
   seoTitle: Joi.string().trim().max(70).allow("").optional().messages({
     "string.max": "SEO title cannot exceed 70 characters.",
