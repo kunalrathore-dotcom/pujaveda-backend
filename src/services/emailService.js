@@ -17,11 +17,14 @@ const getTransporter = () => {
     transporter = nodemailer.createTransport({
       host,
       port,
-      secure: port === 465, // false for 587 (STARTTLS)
+      secure: port === 465, // false for 587 or 2525 (STARTTLS)
       auth: {
         user,
         pass,
       },
+      connectionTimeout: 10000, // 10s connection timeout prevents hung requests on cloud hosts
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
       tls: {
         rejectUnauthorized: true,
       },
@@ -43,10 +46,11 @@ export const verifySmtpConnection = async () => {
 
 export const sendEmail = async ({ to, subject, text, html }) => {
   const from = process.env.EMAIL_FROM || "kunalrathore@youngdecade.com";
+  const appName = process.env.APP_NAME || "Pujaveda";
   const t = getTransporter();
 
   return t.sendMail({
-    from: `"Pluxpc Support" <${from}>`,
+    from: `"${appName}" <${from}>`,
     to,
     subject,
     text,

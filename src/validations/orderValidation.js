@@ -74,8 +74,11 @@ export const createOrderSchema = Joi.object({
     country: Joi.string().trim().max(50).default("India"),
   }).required(),
   paymentMethod: Joi.string()
-    .valid("cod", "razorpay", "demo_online")
-    .default("cod"),
+    .valid("razorpay")
+    .default("razorpay")
+    .messages({
+      "any.only": "Cash on delivery (COD) is not accepted. Only online payment via Razorpay is supported.",
+    }),
   couponCode: Joi.forbidden().messages({
     "any.unknown": "Coupons are not supported for storefront checkout.",
   }),

@@ -21,6 +21,8 @@ import auditRoutes from "./routes/auditRoutes.js";
 import contentRoutes from "./routes/contentRoutes.js";
 import earningsRoutes from "./routes/earningsRoutes.js";
 import { blogPublicRoutes, blogAdminRoutes } from "./routes/blogRoutes.js";
+import legalPageRoutes from "./routes/legalPageRoutes.js";
+import { seedDefaultLegalPages } from "./controllers/legalPageController.js";
 import { getRedisStatus } from "./config/redis.js";
 import { getUploadDir } from "./services/storageService.js";
 
@@ -122,6 +124,7 @@ app.use("/api/audit", auditRoutes);
 app.use("/api/content", contentRoutes);
 app.use("/api/blog", blogPublicRoutes);
 app.use("/api/admin/blog", blogAdminRoutes);
+app.use("/api/legal", legalPageRoutes);
 
 // Error handlers
 app.use(notFoundHandler);

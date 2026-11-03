@@ -3,8 +3,11 @@ import Razorpay from "razorpay";
 import { Order } from "../models/Order.js";
 import { Product } from "../models/Product.js";
 import { Payment } from "../models/Payment.js";
+import { User } from "../models/User.js";
 import { couponService } from "../services/couponService.js";
 import { auditService } from "../services/auditService.js";
+import { sendEmail } from "../services/emailService.js";
+import { getOrderConfirmationEmail } from "./emailTemplates.js";
 
 export const getRazorpayClient = () => {
   const keyId = process.env.RAZORPAY_KEY_ID;
@@ -119,6 +122,55 @@ export const confirmCapturedPayment = async ({ gatewayOrderId, gatewayPaymentId 
     verifiedAt: now,
   };
   await order.save();
+
+  // Send Order Confirmation Email (idempotent, non-blocking)
+  if (!order.emailNotification?.sent) {
+    let recipientEmail = order.customerDetails?.email;
+    if (!recipientEmail && order.user) {
+      try {
+        const orderUser = await User.findById(order.user).select("email");
+        recipientEmail = orderUser?.email;
+      } catch (userErr) {
+        console.warn("[PaymentUtility] Failed to fetch user for order confirmation email:", userErr.message);
+      }
+    }
+
+    if (recipientEmail) {
+      try {
+        const storefrontUrl = process.env.FRONTEND_USER_URL || "https://pujaveda.in";
+        const emailContent = getOrderConfirmationEmail({
+          order,
+          storefrontUrl,
+        });
+
+        await sendEmail({
+          to: recipientEmail,
+          subject: emailContent.subject,
+          text: emailContent.text,
+          html: emailContent.html,
+        });
+
+        order.emailNotification = {
+          sent: true,
+          sentAt: new Date(),
+          recipientEmail,
+          attempts: (order.emailNotification?.attempts || 0) + 1,
+          lastError: null,
+        };
+        await order.save();
+      } catch (emailErr) {
+        console.error(`[PaymentUtility] Order confirmation email delivery failed: ${emailErr.message}`);
+        order.emailNotification = {
+          sent: false,
+          sentAt: null,
+          recipientEmail,
+          attempts: (order.emailNotification?.attempts || 0) + 1,
+          lastError: emailErr.message,
+        };
+        await order.save();
+      }
+    }
+  }
 
   // Atomically and idempotently record coupon redemption upon successful payment
   if (order.coupon?.code) {

@@ -9,6 +9,7 @@ dotenv.config();
 
 import app from "./app.js";
 import { connectDB, closeDB } from "./config/db.js";
+import { seedDefaultLegalPages } from "./controllers/legalPageController.js";
 
 const PORT = process.env.PORT || 5000;
 
@@ -16,6 +17,7 @@ const startServer = async () => {
   try {
     // Connect to MongoDB Atlas (fails safely if connection cannot be established)
     await connectDB();
+    await seedDefaultLegalPages();
 
     const server = app.listen(PORT, () => {
       console.log(`[Sonic Backend] Server running in ${process.env.NODE_ENV || "development"} mode on http://localhost:${PORT}`);

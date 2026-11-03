@@ -101,8 +101,8 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["cod", "razorpay", "demo_online"],
-      default: "cod",
+      enum: ["razorpay", "cod", "demo_online"],
+      default: "razorpay",
     },
     paymentStatus: {
       type: String,
@@ -120,6 +120,13 @@ const orderSchema = new mongoose.Schema(
       enum: ["Pending", "Processing", "Delivered", "Cancelled"],
       default: "Pending",
       index: true,
+    },
+    emailNotification: {
+      sent: { type: Boolean, default: false },
+      sentAt: { type: Date, default: null },
+      recipientEmail: { type: String, default: "" },
+      attempts: { type: Number, default: 0 },
+      lastError: { type: String, default: null },
     },
   },
   {

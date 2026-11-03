@@ -324,17 +324,16 @@ const handleForgotPassword = async (req, res, targetRole = "user") => {
     } catch (emailErr) {
       console.error("[AuthController] Failed to send OTP email via SMTP:", emailErr.message);
 
-      // In development mode, provide a helper log so testing can proceed if Brevo restricts current IP
+      // In local development, provide a helper log in server terminal for offline testing
       if (process.env.NODE_ENV !== "production") {
         console.log(`[DEV NOTICE] Password reset OTP for ${normalizedEmail}: ${otp}`);
       }
 
-      // If SMTP authentication/IP failed, inform user honestly
+      // Return a clean error response without exposing internal secrets or OTPs
       return res.status(500).json({
         success: false,
         message:
-          "Unable to deliver OTP email at this time. Please check SMTP configuration or try again shortly.",
-        devOtp: process.env.NODE_ENV !== "production" ? otp : undefined,
+          "Unable to deliver OTP verification email at this time. Please try again shortly or contact support.",
       });
     }
 

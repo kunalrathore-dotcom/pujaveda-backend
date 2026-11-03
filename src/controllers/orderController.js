@@ -30,7 +30,14 @@ export const quoteOrder = async (req, res) => {
 };
 
 export const createOrder = async (req, res) => {
-  const { items, customerDetails, shippingAddress, paymentMethod = "cod" } = req.body;
+  const { items, customerDetails, shippingAddress, paymentMethod = "razorpay" } = req.body;
+
+  if (paymentMethod === "cod") {
+    return res.status(400).json({
+      success: false,
+      message: "Cash on delivery (COD) is not accepted. Only online payment via Razorpay is supported.",
+    });
+  }
 
   if (!items || !items.length) {
     return res.status(400).json({
@@ -152,8 +159,8 @@ export const createOrder = async (req, res) => {
     }
   }
 
-  // For COD or demo_online, record coupon usage immediately upon order placement
-  if ((paymentMethod === "cod" || paymentMethod === "demo_online") && coupon?.code) {
+  // For demo_online, record coupon usage immediately upon order placement
+  if (paymentMethod === "demo_online" && coupon?.code) {
     try {
       await couponService.recordRedemption({
         couponCode: coupon.code,
