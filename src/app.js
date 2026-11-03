@@ -20,6 +20,7 @@ import pricingRoutes from "./routes/pricingRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
 import contentRoutes from "./routes/contentRoutes.js";
 import earningsRoutes from "./routes/earningsRoutes.js";
+import { blogPublicRoutes, blogAdminRoutes } from "./routes/blogRoutes.js";
 import { getRedisStatus } from "./config/redis.js";
 import { getUploadDir } from "./services/storageService.js";
 
@@ -119,6 +120,8 @@ app.use("/api/coupons", couponRoutes);
 app.use("/api/pricing-charges", pricingRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/content", contentRoutes);
+app.use("/api/blog", blogPublicRoutes);
+app.use("/api/admin/blog", blogAdminRoutes);
 
 // Error handlers
 app.use(notFoundHandler);
