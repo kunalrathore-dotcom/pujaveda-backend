@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Blog } from "../models/Blog.js";
+import { BlogCategory } from "../models/BlogCategory.js";
 import { BLOG_CATEGORIES } from "../constants/blogCategories.js";
 import { sanitizeArticleHtml } from "../utils/sanitizeHtml.js";
 import {
@@ -63,10 +64,20 @@ export const createArticle = async (req, res) => {
     const articleStatus = status === "published" ? "published" : "draft";
     const publishedAt = articleStatus === "published" ? new Date() : null;
 
+    let resolvedCategoryId = req.body.categoryId || null;
+    if (!resolvedCategoryId && category) {
+      const catDoc = await BlogCategory.findOne({
+        name: category.trim(),
+        isDeleted: { $ne: true },
+      }).lean();
+      if (catDoc) resolvedCategoryId = catDoc._id;
+    }
+
     const newArticle = new Blog({
       title: title.trim(),
       slug: normalizedSlug,
       category: category.trim(),
+      categoryId: resolvedCategoryId,
       shortDescription: shortDescription.trim(),
       coverImage: coverImage.trim(),
       content: sanitizedContent,
@@ -241,7 +252,17 @@ export const updateArticle = async (req, res) => {
     }
 
     if (title !== undefined) article.title = title.trim();
-    if (category !== undefined) article.category = category.trim();
+    if (category !== undefined) {
+      article.category = category.trim();
+      const catDoc = await BlogCategory.findOne({
+        name: category.trim(),
+        isDeleted: { $ne: true },
+      }).lean();
+      if (catDoc) article.categoryId = catDoc._id;
+    }
+    if (req.body.categoryId !== undefined) {
+      article.categoryId = req.body.categoryId || null;
+    }
     if (shortDescription !== undefined) article.shortDescription = shortDescription.trim();
     if (coverImage !== undefined) article.coverImage = coverImage.trim();
     if (seoTitle !== undefined) article.seoTitle = (seoTitle || "").trim();

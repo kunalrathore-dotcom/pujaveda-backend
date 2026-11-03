@@ -1,7 +1,70 @@
 import Joi from "joi";
-import { BLOG_CATEGORIES } from "../constants/blogCategories.js";
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export const createBlogCategorySchema = Joi.object({
+  name: Joi.string().trim().min(2).max(40).required().messages({
+    "string.base": "Category name must be a valid text string.",
+    "string.empty": "Category name is required.",
+    "string.min": "Category name must be at least 2 characters.",
+    "string.max": "Category name cannot exceed 40 characters.",
+    "any.required": "Category name is required.",
+  }),
+
+  slug: Joi.string()
+    .trim()
+    .lowercase()
+    .min(2)
+    .max(60)
+    .pattern(slugRegex)
+    .required()
+    .messages({
+      "string.base": "Slug must be a valid text string.",
+      "string.empty": "Slug is required.",
+      "string.min": "Slug must be at least 2 characters.",
+      "string.max": "Slug cannot exceed 60 characters.",
+      "string.pattern.base":
+        "Slug must consist of lowercase letters, numbers, and single hyphens without special characters or spaces.",
+      "any.required": "Slug is required.",
+    }),
+
+  description: Joi.string().trim().max(150).allow("").optional().messages({
+    "string.max": "Description cannot exceed 150 characters.",
+  }),
+
+  order: Joi.number().integer().min(0).default(0).optional(),
+});
+
+export const updateBlogCategorySchema = Joi.object({
+  name: Joi.string().trim().min(2).max(40).optional().messages({
+    "string.base": "Category name must be a valid text string.",
+    "string.empty": "Category name cannot be empty.",
+    "string.min": "Category name must be at least 2 characters.",
+    "string.max": "Category name cannot exceed 40 characters.",
+  }),
+
+  slug: Joi.string()
+    .trim()
+    .lowercase()
+    .min(2)
+    .max(60)
+    .pattern(slugRegex)
+    .optional()
+    .messages({
+      "string.base": "Slug must be a valid text string.",
+      "string.empty": "Slug cannot be empty.",
+      "string.min": "Slug must be at least 2 characters.",
+      "string.max": "Slug cannot exceed 60 characters.",
+      "string.pattern.base":
+        "Slug must consist of lowercase letters, numbers, and single hyphens without special characters or spaces.",
+    }),
+
+  description: Joi.string().trim().max(150).allow("").optional().messages({
+    "string.max": "Description cannot exceed 150 characters.",
+  }),
+
+  order: Joi.number().integer().min(0).optional(),
+});
 
 export const createBlogSchema = Joi.object({
   title: Joi.string().trim().min(2).max(80).required().messages({
@@ -29,16 +92,15 @@ export const createBlogSchema = Joi.object({
       "any.required": "Slug is required.",
     }),
 
-  category: Joi.string()
-    .trim()
-    .valid(...BLOG_CATEGORIES)
-    .required()
-    .messages({
-      "string.base": "Category must be a valid string.",
-      "string.empty": "Please select a valid category.",
-      "any.only": "Please select a valid category from approved Pujaveda Journal categories.",
-      "any.required": "Category is required.",
-    }),
+  category: Joi.string().trim().min(2).max(40).required().messages({
+    "string.base": "Category must be a valid text string.",
+    "string.empty": "Please select or enter a category.",
+    "string.min": "Category must be at least 2 characters.",
+    "string.max": "Category cannot exceed 40 characters.",
+    "any.required": "Category is required.",
+  }),
+
+  categoryId: Joi.string().trim().allow(null, "").optional(),
 
   shortDescription: Joi.string().trim().min(5).max(180).required().messages({
     "string.base": "Short description must be a valid text string.",
@@ -103,14 +165,13 @@ export const updateBlogSchema = Joi.object({
         "Slug must consist of lowercase letters, numbers, and single hyphens without special characters or spaces.",
     }),
 
-  category: Joi.string()
-    .trim()
-    .valid(...BLOG_CATEGORIES)
-    .optional()
-    .messages({
-      "string.empty": "Category cannot be empty.",
-      "any.only": "Please select a valid category from approved Pujaveda Journal categories.",
-    }),
+  category: Joi.string().trim().min(2).max(40).optional().messages({
+    "string.empty": "Category cannot be empty.",
+    "string.min": "Category must be at least 2 characters.",
+    "string.max": "Category cannot exceed 40 characters.",
+  }),
+
+  categoryId: Joi.string().trim().allow(null, "").optional(),
 
   shortDescription: Joi.string().trim().min(5).max(180).optional().messages({
     "string.base": "Short description must be a valid text string.",
@@ -162,4 +223,3 @@ export const blogQuerySchema = Joi.object({
   category: Joi.string().trim().max(60).allow("").optional(),
   status: Joi.string().trim().valid("all", "draft", "published").default("all"),
 }).unknown(true);
-

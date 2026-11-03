@@ -27,11 +27,13 @@ const blogSchema = new mongoose.Schema(
       type: String,
       required: [true, "Category is required."],
       trim: true,
-      enum: {
-        values: BLOG_CATEGORIES,
-        message: "Please select a valid category from the approved Pujaveda Journal categories.",
-      },
+      maxlength: [40, "Category cannot exceed 40 characters."],
       index: true,
+    },
+    categoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "BlogCategory",
+      default: null,
     },
     shortDescription: {
       type: String,
@@ -87,6 +89,10 @@ const blogSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,
+    },
+    isDemo: {
+      type: Boolean,
+      default: false,
     },
     isDeleted: {
       type: Boolean,
