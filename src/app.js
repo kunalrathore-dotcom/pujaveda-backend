@@ -112,6 +112,36 @@ app.get("/api/health/smtp", async (req, res) => {
   res.status(result.connected ? 200 : 503).json(result);
 });
 
+// Diagnostic SMTP Send Test (safe: only sends to configured SMTP_USER/care)
+app.get("/api/health/smtp/test-send", async (req, res) => {
+  const { sendEmail } = await import("./services/emailService.js");
+  const targetEmail = process.env.SMTP_USER || "support.youngdecade@gmail.com";
+  try {
+    const info = await sendEmail({
+      to: targetEmail,
+      subject: "Pujaveda Render Live Delivery Test",
+      text: "Testing real email delivery from deployed Render instance.",
+      html: "<p>Testing real email delivery from deployed Render instance.</p>",
+    });
+    res.json({
+      success: true,
+      messageId: info.messageId,
+      response: info.response,
+      accepted: info.accepted,
+      rejected: info.rejected,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message,
+      code: err.code || null,
+      command: err.command || null,
+      response: err.response || null,
+      responseCode: err.responseCode || null,
+    });
+  }
+});
+
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
