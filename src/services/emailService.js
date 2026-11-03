@@ -3,9 +3,9 @@ import nodemailer from "nodemailer";
 
 let transporter = null;
 
-const getTransporter = () => {
+export const getTransporter = () => {
   if (!transporter) {
-    const host = process.env.SMTP_HOST || "smtp-relay.brevo.com";
+    const host = process.env.SMTP_HOST || "smtp.gmail.com";
     const port = Number(process.env.SMTP_PORT || 587);
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
@@ -14,15 +14,19 @@ const getTransporter = () => {
       console.warn("[EmailService] SMTP credentials not configured.");
     }
 
+    const isExplicitSsl = process.env.SMTP_SECURE === "ssl" || process.env.SMTP_SECURE === "true";
+    const secure = port === 465 || (isExplicitSsl && port !== 587);
+
     transporter = nodemailer.createTransport({
       host,
       port,
-      secure: port === 465, // false for 587 or 2525 (STARTTLS)
+      secure,
+      requireTLS: !secure && (port === 587 || process.env.SMTP_SECURE === "tls" || isExplicitSsl),
       auth: {
         user,
         pass,
       },
-      connectionTimeout: 10000, // 10s connection timeout prevents hung requests on cloud hosts
+      connectionTimeout: 10000,
       greetingTimeout: 10000,
       socketTimeout: 15000,
       tls: {
@@ -45,12 +49,12 @@ export const verifySmtpConnection = async () => {
 };
 
 export const sendEmail = async ({ to, subject, text, html }) => {
-  const from = process.env.EMAIL_FROM || "kunalrathore@youngdecade.com";
-  const appName = process.env.APP_NAME || "Pujaveda";
+  const senderEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || "support.youngdecade@gmail.com";
+  const senderName = process.env.EMAIL_FROM_NAME || process.env.APP_NAME || "Pujaveda";
   const t = getTransporter();
 
   return t.sendMail({
-    from: `"${appName}" <${from}>`,
+    from: `"${senderName}" <${senderEmail}>`,
     to,
     subject,
     text,

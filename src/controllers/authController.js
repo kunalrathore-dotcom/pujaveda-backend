@@ -324,11 +324,6 @@ const handleForgotPassword = async (req, res, targetRole = "user") => {
     } catch (emailErr) {
       console.error("[AuthController] Failed to send OTP email via SMTP:", emailErr.message);
 
-      // In local development, provide a helper log in server terminal for offline testing
-      if (process.env.NODE_ENV !== "production") {
-        console.log(`[DEV NOTICE] Password reset OTP for ${normalizedEmail}: ${otp}`);
-      }
-
       // Return a clean error response without exposing internal secrets or OTPs
       return res.status(500).json({
         success: false,
