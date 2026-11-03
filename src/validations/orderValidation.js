@@ -76,12 +76,14 @@ export const createOrderSchema = Joi.object({
   paymentMethod: Joi.string()
     .valid("cod", "razorpay", "demo_online")
     .default("cod"),
-  couponCode: Joi.string().trim().max(30).allow("").optional(),
+  couponCode: Joi.forbidden().messages({
+    "any.unknown": "Coupons are not supported for storefront checkout.",
+  }),
   couponCodes: Joi.forbidden().messages({
-    "any.unknown": "Only one coupon can be applied per checkout.",
+    "any.unknown": "Coupons are not supported for storefront checkout.",
   }),
   coupons: Joi.forbidden().messages({
-    "any.unknown": "Only one coupon can be applied per checkout.",
+    "any.unknown": "Coupons are not supported for storefront checkout.",
   }),
 });
 

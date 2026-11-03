@@ -78,7 +78,6 @@ export const createProductSchema = Joi.object({
       })
     )
     .optional(),
-  couponIds: Joi.array().items(Joi.string().hex().length(24)).optional(),
 });
 
 export const updateProductSchema = Joi.object({
@@ -125,7 +124,6 @@ export const updateProductSchema = Joi.object({
       })
     )
     .optional(),
-  couponIds: Joi.array().items(Joi.string().hex().length(24)).optional(),
 }).min(1);
 
 export const productQuerySchema = Joi.object({

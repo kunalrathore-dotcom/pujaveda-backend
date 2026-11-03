@@ -1,29 +1,7 @@
 import mongoose from "mongoose";
 import { Product } from "../models/Product.js";
 import { Category } from "../models/Category.js";
-import { Coupon } from "../models/Coupon.js";
 import { storageService } from "../services/storageService.js";
-import { couponService } from "../services/couponService.js";
-
-const attachAssignedCoupons = async (products) => {
-  const list = Array.isArray(products) ? products : [products];
-  if (!list.length) return products;
-
-  const ids = list.map((product) => product._id);
-  const coupons = await Coupon.find({ applicableProducts: { $in: ids } }).select(
-    "code description discountType discountValue maxDiscount minCartValue isActive startDate expiryDate applicableProducts"
-  );
-
-  const mapped = list.map((product) => {
-    const assignedCoupons = coupons.filter((coupon) =>
-      (coupon.applicableProducts || []).some((id) => String(id) === String(product._id))
-    );
-    const json = product.toObject ? product.toObject() : product;
-    return { ...json, assignedCoupons };
-  });
-
-  return Array.isArray(products) ? mapped : mapped[0];
-};
 
 const slugify = (value) =>
   value
@@ -136,15 +114,13 @@ export const getProducts = async (req, res) => {
     Product.countDocuments(filter),
   ]);
 
-  const productsWithCoupons = await attachAssignedCoupons(products);
-
   res.json({
     success: true,
     count: products.length,
     total,
     page: pageNum,
     pages: Math.ceil(total / limitNum) || 1,
-    products: productsWithCoupons,
+    products,
   });
 };
 
@@ -173,11 +149,9 @@ export const getProductById = async (req, res) => {
     });
   }
 
-  const productWithCoupons = await attachAssignedCoupons(product);
-
   res.json({
     success: true,
-    product: productWithCoupons,
+    product,
   });
 };
 
@@ -303,16 +277,10 @@ export const createProduct = async (req, res) => {
     faqs: faqs || [],
   });
 
-  if (Array.isArray(req.body.couponIds)) {
-    await couponService.syncProductCouponAssignments(product._id, req.body.couponIds);
-  }
-
-  const productWithCoupons = await attachAssignedCoupons(product);
-
   res.status(201).json({
     success: true,
     message: "Product created successfully.",
-    product: productWithCoupons,
+    product,
   });
 };
 
@@ -458,16 +426,10 @@ export const updateProduct = async (req, res) => {
 
   await product.save();
 
-  if (Array.isArray(data.couponIds)) {
-    await couponService.syncProductCouponAssignments(product._id, data.couponIds);
-  }
-
-  const productWithCoupons = await attachAssignedCoupons(product);
-
   res.json({
     success: true,
     message: "Product updated successfully.",
-    product: productWithCoupons,
+    product,
   });
 };
 
