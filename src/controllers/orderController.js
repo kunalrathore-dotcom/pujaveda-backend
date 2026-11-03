@@ -372,7 +372,10 @@ export const updateOrderStatus = async (req, res) => {
 };
 
 export const verifyPayment = async (req, res) => {
-  const { orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+  const { orderId } = req.body;
+  const razorpayOrderId = req.body.razorpayOrderId || req.body.razorpay_order_id;
+  const razorpayPaymentId = req.body.razorpayPaymentId || req.body.razorpay_payment_id;
+  const razorpaySignature = req.body.razorpaySignature || req.body.razorpay_signature;
 
   const order = await Order.findById(orderId);
   if (!order) {

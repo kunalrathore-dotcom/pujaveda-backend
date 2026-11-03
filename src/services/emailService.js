@@ -48,6 +48,43 @@ export const verifySmtpConnection = async () => {
   }
 };
 
+export const verifySmtpConnectionDetailed = async () => {
+  const host = process.env.SMTP_HOST || "not_configured";
+  const port = Number(process.env.SMTP_PORT || 587);
+  const user = process.env.SMTP_USER || "";
+  const maskedUser = user ? user.replace(/^(.{3})(.*)(@.*)$/, "$1***$3") : "not_configured";
+  const emailFrom = process.env.EMAIL_FROM || "";
+  const maskedFrom = emailFrom ? emailFrom.replace(/^(.{3})(.*)(@.*)$/, "$1***$3") : "not_configured";
+
+  try {
+    const t = getTransporter();
+    await t.verify();
+    return {
+      connected: true,
+      host,
+      port,
+      user: maskedUser,
+      from: maskedFrom,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      connected: false,
+      host,
+      port,
+      user: maskedUser,
+      from: maskedFrom,
+      error: {
+        message: err.message,
+        code: err.code || null,
+        response: err.response || null,
+        responseCode: err.responseCode || null,
+        command: err.command || null,
+      },
+    };
+  }
+};
+
 export const sendEmail = async ({ to, subject, text, html }) => {
   const senderEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || "support.youngdecade@gmail.com";
   const senderName = process.env.EMAIL_FROM_NAME || process.env.APP_NAME || "Pujaveda";

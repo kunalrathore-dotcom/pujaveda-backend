@@ -105,6 +105,13 @@ app.get("/api/health", async (req, res) => {
   });
 });
 
+// Diagnostic SMTP Health Check (safe: no secret leakage)
+app.get("/api/health/smtp", async (req, res) => {
+  const { verifySmtpConnectionDetailed } = await import("./services/emailService.js");
+  const result = await verifySmtpConnectionDetailed();
+  res.status(result.connected ? 200 : 503).json(result);
+});
+
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
