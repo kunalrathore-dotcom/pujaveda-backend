@@ -16,173 +16,234 @@ const demoCategories = [
   {
     name: "Puja Guides",
     slug: "puja-guides",
-    description: "Step-by-step ritual guides, auspicious vidhis, and authentic samagri checklists for daily and festive Hindu worship.",
+    description: "Simple step-by-step guides, helpful preparation checklists, and practical tips for home pujas and ceremonies.",
     order: 1,
   },
   {
     name: "Festival Guides",
     slug: "festival-guides",
-    description: "Comprehensive guides to major Sanatan Dharma festivals, auspicious muhurats, and sacred vrat observances.",
+    description: "Practical guides to celebrating Indian festivals at home with family, including altar setups and simple rituals.",
     order: 2,
   },
   {
     name: "Product Knowledge",
     slug: "product-knowledge",
-    description: "Deep dive into sacred brass idols, energized shankhs, organic herbal dhoop, and handcrafted spiritual artifacts.",
+    description: "Helpful advice on choosing authentic brass idols, natural dhoop, and caring for your sacred puja essentials.",
     order: 3,
   },
   {
     name: "Home Mandir Ideas",
     slug: "home-mandir-ideas",
-    description: "Vedic Vastu Shastra recommendations, sacred altar setups, lighting tips, and peaceful home sanctuary inspiration.",
+    description: "Easy-to-follow ideas for setting up, organizing, and maintaining a peaceful, clean home temple space.",
     order: 4,
   },
   {
     name: "Spiritual Lifestyle",
     slug: "spiritual-lifestyle",
-    description: "Integrating Sanatan wisdom, daily morning/evening Sandhya rituals, mantra chanting, and sattvic living into modern life.",
+    description: "Simple daily routines, evening prayers, and practical mindfulness habits to bring calm to modern family life.",
     order: 5,
   },
 ];
 
 const demoArticles = [
   {
-    title: "Complete Griha Pravesh Puja Vidhi & Essential Samagri Checklist",
-    slug: "complete-griha-pravesh-puja-vidhi-and-samagri-checklist",
+    title: "A Simple Guide to Griha Pravesh Puja at Home",
+    slug: "simple-guide-griha-pravesh-puja-at-home",
     category: "Puja Guides",
-    shortDescription: "A comprehensive step-by-step guide to conducting an auspicious Griha Pravesh ceremony with all required Vedic samagri and rituals.",
+    shortDescription: "Moving into a new home? Here is a practical, step-by-step guide to preparing your space and conducting a peaceful housewarming puja.",
     coverImage: "https://images.unsplash.com/photo-1609137144822-263e8a4a5e3f?auto=format&fit=crop&w=1200&q=80",
-    seoTitle: "Griha Pravesh Puja Vidhi & Samagri Checklist | Pujaveda",
-    seoDescription: "Step-by-step guide to conducting an authentic Vedic Griha Pravesh ritual with essential samagri, Vastu tips, and auspicious muhurats.",
-    status: "published",
-    author: "Acharya Vidyadhar",
-    content: `
-      <h2>The Significance of Griha Pravesh</h2>
-      <p>Griha Pravesh (Housewarming) is one of the most sacred samskaras in Vedic tradition. Before occupying a new dwelling, performing the Vastu Shanti and Navagraha Havan cleanses the premises of negative energies and invites divine prosperity into the home.</p>
-
-      <h2>Auspicious Preparations</h2>
-      <p>Before the pandit arrives, ensure the home is completely cleaned, painted, and the main entrance (Simhadwara) is adorned with a toran of fresh mango leaves and marigold blossoms. Drawing an auspicious Swastika and Rangoli with pure turmeric and vermillion creates a protective spiritual threshold.</p>
-
-      <blockquote>"Yatra naryastu pujyante ramante tatra Devata — Where sacred purity and righteousness reside, there the gods rejoice."</blockquote>
-
-      <h2>Essential Samagri Checklist</h2>
-      <ul>
-        <li><strong>Copper or Brass Kalash:</strong> Filled with holy Ganga jal, mango leaves, and a whole coconut wrapped in red mauli thread.</li>
-        <li><strong>Panchamrit:</strong> Blend of pure cow milk, fresh curd, desi ghee, raw honey, and bura (unrefined sugar).</li>
-        <li><strong>Havan Essentials:</strong> Pure cow dung cakes, dry mango wood sticks (samidha), black sesame seeds (til), jav, and pure camphor tablets.</li>
-        <li><strong>Navagraha Puja Samagri:</strong> Nine types of grains (Navadhanya) and colored cloths corresponding to the nine celestial planetary deities.</li>
-      </ul>
-
-      <h2>Step-by-Step Ritual Sequence</h2>
-      <p>The ceremony commences with <em>Ganapati Puja</em> to remove all obstacles, followed by <em>Vastu Purusha Aradhana</em> at the northeast (Ishanya) corner. The sacred Havan fire is kindled with ghee and chanting of the Gayatri and Mahamrityunjaya Mantras, culminating in the boiling over of milk on a new stove to symbolize inexhaustible abundance.</p>
-    `,
-  },
-  {
-    title: "Diwali Lakshmi-Ganesha Puja: Sacred Altar Setup & Vedic Muhurat",
-    slug: "diwali-lakshmi-ganesha-puja-sacred-altar-setup-and-muhurat",
-    category: "Festival Guides",
-    shortDescription: "Learn how to prepare the sacred Pradosh Kaal altar for Deepavali, place Mahalakshmi and Lord Ganesha correctly, and invoke eternal prosperity.",
-    coverImage: "https://images.unsplash.com/photo-1574676104449-33b1e326b978?auto=format&fit=crop&w=1200&q=80",
-    seoTitle: "Diwali Lakshmi Ganesha Puja Guide & Altar Setup | Pujaveda",
-    seoDescription: "Detailed step-by-step instructions for Diwali evening Lakshmi Puja, altar placement rules, and essential brass diya lighting traditions.",
+    seoTitle: "Griha Pravesh Puja Guide: Checklist & Steps | Pujaveda",
+    seoDescription: "A beginner-friendly guide to Griha Pravesh: essential samagri checklist, preparing your new home, and simple housewarming rituals.",
     status: "published",
     author: "Pujaveda Editorial",
     content: `
-      <h2>The Divine Night of Deepavali</h2>
-      <p>Diwali marks the auspicious arrival of Goddess Mahalakshmi into homes swept clean of clutter and illuminated by devotion. Performing Lakshmi Puja during the auspicious <em>Pradosh Kaal</em> and <em>Sthir Lagna</em> is believed to bestow lasting fortune that never departs.</p>
+      <h2>A Fresh Beginning in Your New Home</h2>
+      <p>Moving into a new home is one of life's most memorable milestones. In Indian culture, performing a Griha Pravesh puja is a beautiful way to express gratitude for the new dwelling and fill the space with peace and positive thoughts before settling in.</p>
 
-      <h2>Sacred Altar Placement Rules</h2>
-      <p>Set up the chowki (wooden altar) in the East or North direction covered with a fresh red silk cloth. Place Lord Ganesha to the left of Goddess Lakshmi (from the worshipper's viewpoint), as Lord Ganesha is the remover of impediments and Lakshmi is the giver of siddhis.</p>
-
+      <h2>Preparing Your Home Before the Puja</h2>
+      <p>A little preparation goes a long way in ensuring your ceremony runs smoothly and calmly:</p>
       <ul>
-        <li><strong>Akshat Bed:</strong> Create a bed of raw unpolished rice grains mixed with turmeric beneath the deities.</li>
-        <li><strong>Ashtalakshmi Kalash:</strong> Place a copper kalash with betel nut, a silver coin, cardamom, and fresh water topped with coconut.</li>
-        <li><strong>Pure Brass Diyas:</strong> Light the primary Panchamukhi brass diya with pure cow ghee and 21 earthen diyas with sesame (til) oil.</li>
+        <li><strong>Clean thoroughly:</strong> Ensure all rooms, especially the kitchen and mandir area, are tidy and uncluttered.</li>
+        <li><strong>Adorn the entrance:</strong> Hang a fresh toran of mango leaves and marigold blossoms on the front door to create a warm welcome.</li>
+        <li><strong>Draw a welcoming rangoli:</strong> A simple rangoli with natural rice flour and turmeric at the entrance adds festive joy.</li>
       </ul>
 
-      <h2>The Shodashopachara Worship</h2>
-      <p>Offer fragrant red lotus blossoms, whole supari, dry fruits, batasha, and fresh kheer. Recite the Sri Suktam and Lakshmi Ashtakam with calm contemplation. Conclude with Maha Aarti and distribution of prasad among family and loved ones.</p>
+      <blockquote>"A home becomes a sanctuary when filled with gratitude, patience, and love."</blockquote>
+
+      <h2>Essential Items Checklist</h2>
+      <p>Here are the primary items needed for a standard housewarming ceremony:</p>
+      <ul>
+        <li><strong>Kalash & Coconut:</strong> A clean brass or copper pot filled with water, mango leaves, and a coconut wrapped in red thread.</li>
+        <li><strong>Puja Thali:</strong> Turmeric powder (haldi), vermilion (kumkum), raw unpolished rice (akshat), and sandalwood paste.</li>
+        <li><strong>Lighting:</strong> A brass diya with pure cow ghee or sesame oil, cotton wicks, and gentle herbal incense.</li>
+        <li><strong>Offerings:</strong> Fresh flowers, seasonal fruits, sweets (prasad), and betel leaves with whole betel nuts.</li>
+      </ul>
+
+      <h2>Step-by-Step Ceremony Overview</h2>
+      <p>Whether you have a pandit guiding you or are conducting a simple family prayer, the sequence is straightforward:</p>
+      <ol>
+        <li><strong>Threshold Welcome:</strong> The family enters the home together with the auspicious kalash, stepping with the right foot first.</li>
+        <li><strong>Ganesha Prayer:</strong> Begin by offering flowers and rice to Lord Ganesha, praying for an obstacle-free, peaceful stay.</li>
+        <li><strong>Boiling Milk:</strong> On a newly cleaned stove, boil milk in an open vessel until it gently spills over, traditionally symbolizing abundance and sweetness in the household.</li>
+        <li><strong>Lighting the First Diya:</strong> Place and light your main diya in the mandir corner, recite a favorite family prayer, and distribute sweets.</li>
+      </ol>
+
+      <h2>Helpful Advice for Families</h2>
+      <p>Remember that sincere devotion and a joyful, relaxed atmosphere matter far more than rigid complexity. Keep the ritual simple, involve every family member, and enjoy the beginning of your new journey together.</p>
     `,
   },
   {
-    title: "Identifying Authentic Brass & Panchdhatu Idols: A Connoisseur's Guide",
-    slug: "identifying-authentic-brass-and-panchdhatu-idols-guide",
+    title: "Preparing for Diwali Lakshmi Puja: A Beginner's Guide",
+    slug: "preparing-for-diwali-lakshmi-puja-beginners-guide",
+    category: "Festival Guides",
+    shortDescription: "Celebrate Diwali with devotion and clarity. Learn how to set up your home altar and perform evening Lakshmi Puja with family.",
+    coverImage: "https://images.unsplash.com/photo-1574676104449-33b1e326b978?auto=format&fit=crop&w=1200&q=80",
+    seoTitle: "Diwali Lakshmi Puja Setup & Beginner's Guide | Pujaveda",
+    seoDescription: "Learn how to prepare for Diwali evening Lakshmi Puja: table setup, essential diyas, family prayer steps, and practical safety tips.",
+    status: "published",
+    author: "Pujaveda Editorial",
+    content: `
+      <h2>The Warmth of Deepavali Evening</h2>
+      <p>Diwali is a festival of illumination, gratitude, and renewed hope. The evening Lakshmi Puja brings families together in prayer to celebrate life's blessings and welcome peace and good fortune into the household.</p>
+
+      <h2>Setting Up Your Puja Altar</h2>
+      <p>You do not need an elaborate setup to make your altar reverent and beautiful:</p>
+      <ul>
+        <li><strong>Choose a clean surface:</strong> A low wooden chowki or tabletop placed in the East or North corner works wonderfully.</li>
+        <li><strong>Cloth base:</strong> Spread a fresh red, yellow, or ivory cloth over the chowki.</li>
+        <li><strong>Placing the Idols:</strong> Place Lord Ganesha on the left and Goddess Lakshmi on the right. A small bed of raw rice grains can be placed under the idols as a traditional seat.</li>
+        <li><strong>The Sacred Pot (Kalash):</strong> Place a small brass kalash filled with clean water, adorned with five mango leaves and a coconut.</li>
+      </ul>
+
+      <h2>What You Need for the Evening</h2>
+      <p>Gather these items an hour before puja so you can sit down peacefully:</p>
+      <ul>
+        <li>A primary brass diya with cow ghee and two cotton wicks.</li>
+        <li>Clay diyas for surrounding windows and entryways.</li>
+        <li>Fresh marigold or rose flowers, batasha, and homemade kheer or dry fruits for prasad.</li>
+        <li>Natural dhoop or incense sticks.</li>
+      </ul>
+
+      <h2>A Simple Family Prayer Routine</h2>
+      <ol>
+        <li>Start by applying a small tilak of sandalwood or kumkum to the deities and each family member.</li>
+        <li>Light the main diya and offer fresh flowers while reciting simple prayers or listening to traditional bhajans.</li>
+        <li>Express silent gratitude for the health, unity, and safety of your loved ones.</li>
+        <li>Sing the Lakshmi Aarti together, gently circle the aarti plate, and share prasad among everyone.</li>
+      </ol>
+
+      <h2>Safety Tips for Diyas</h2>
+      <p>Keep oil diyas away from long curtains, paper decorations, and electrical cords. Always ensure diyas are placed on stable surfaces and extinguished safely before going to sleep.</p>
+    `,
+  },
+  {
+    title: "How to Choose and Care for Brass Idols in Your Mandir",
+    slug: "how-to-choose-and-care-for-brass-idols",
     category: "Product Knowledge",
-    shortDescription: "Essential knowledge on brass weight, acoustic resonance, lost-wax casting details, and how to distinguish pure brass from cheap electroplated alloys.",
+    shortDescription: "Practical advice on selecting quality brass murtis for your home temple and keeping them shining brightly year-round.",
     coverImage: "https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?auto=format&fit=crop&w=1200&q=80",
-    seoTitle: "Authentic Brass & Panchdhatu Idols Guide | Pujaveda",
-    seoDescription: "How to identify authentic solid brass and panchaloha murti: weight tests, casting hallmarks, acoustic resonance, and sacred metal alloys.",
+    seoTitle: "Choosing & Caring for Brass Idols at Home | Pujaveda",
+    seoDescription: "Practical advice on selecting quality brass murtis for your home mandir and natural methods to clean and polish brass without scratching.",
     status: "published",
     author: "Pt. Rameshwar Shastri",
     content: `
-      <h2>Sacred Metallurgy in Sanatan Worship</h2>
-      <p>In the Shilpa Shastras and Agamas, idols consecrated for worship must possess specific metallurgical purities. Pure brass (Pital) and Panchdhatu (an alloy of gold, silver, copper, zinc, and iron) emit positive energetic vibrations and resist negative psychic decay.</p>
+      <h2>The Timeless Charm of Brass Murtis</h2>
+      <p>Brass (Pital) has been the favored material for home mandirs for centuries. It carries a golden radiance, lasts for generations, and withstands daily ablution and cleaning without rusting or breaking.</p>
 
-      <h2>Key Tests for Purity</h2>
+      <h2>What to Look for When Buying Brass Idols</h2>
+      <p>When selecting a murti for your home altar, look for these practical hallmarks of good quality:</p>
       <ul>
-        <li><strong>Heft & Weight Test:</strong> Authentic solid brass murtis have substantial heft. Hollow cast or resin-filled replicas feel unnaturally light for their dimensions.</li>
-        <li><strong>Acoustic Resonance:</strong> When lightly tapped with a coin, pure high-grade brass emits a clear, bell-like chime that sustains for several seconds. Cheaper zinc-heavy alloys produce a dull thud.</li>
-        <li><strong>Lost-Wax Hand Finishing:</strong> Genuine artisanal statues show micro-chisel marks, intricate facial symmetry (Nayan Unmeelan), and natural hand-carved textures rather than plastic mold seam lines.</li>
+        <li><strong>Weight and Feel:</strong> A quality brass idol feels solid and heavy in your hands. Avoid overly light, hollow statues that tip over easily.</li>
+        <li><strong>Facial Expression:</strong> Look closely at the eyes, smile, and posture. Artisanal lost-wax cast statues feature gentle, balanced, and serene expressions.</li>
+        <li><strong>Smooth Finishing:</strong> Run your fingers gently along the edges. The statue should be free of sharp burrs or rough mold seams.</li>
       </ul>
 
-      <h2>Care and Maintenance of Sacred Brass</h2>
-      <p>Clean your home mandir idols gently using natural pitambari powder, lemon juice, or tamarind paste mixed with rock salt. Rinse thoroughly with clean warm water and buff with a soft microfiber cloth to preserve their radiant golden sheen.</p>
+      <h2>Natural Ways to Clean and Polish Brass</h2>
+      <p>Over time, brass naturally darkens due to exposure to air, incense smoke, and moisture. You can easily restore its warm golden glow using simple kitchen ingredients:</p>
+
+      <blockquote>"Gentle, regular cleaning preserves the detailed hand carvings of your sacred idols far better than harsh chemicals."</blockquote>
+
+      <ul>
+        <li><strong>Lemon and Salt Method:</strong> Cut a fresh lemon in half, sprinkle a pinch of fine salt on the surface, and gently rub the brass. The natural citric acid dissolves surface tarnish within seconds.</li>
+        <li><strong>Tamarind Paste:</strong> Soak a small piece of tamarind in warm water, apply the paste over the idol, let it sit for two minutes, and wipe clean.</li>
+        <li><strong>Pitambari Powder:</strong> For deep cleaning before festivals, use standard pitambari powder with a soft cotton cloth.</li>
+      </ul>
+
+      <h2>What to Avoid</h2>
+      <p>Never clean fine brass idols with abrasive metal scourers, wire brushes, or harsh acid-based toilet cleaners. These leave deep scratches and remove the natural warm patina of the metal. Always rinse with clean water and dry thoroughly with a soft microfiber cloth.</p>
     `,
   },
   {
-    title: "Setting Up an Auspicious North-East Home Mandir as per Vastu Shastra",
-    slug: "setting-up-auspicious-northeast-home-mandir-vastu-shastra",
+    title: "Setting Up a Peaceful Home Mandir: Simple Vastu and Altar Tips",
+    slug: "setting-up-a-peaceful-home-mandir-simple-tips",
     category: "Home Mandir Ideas",
-    shortDescription: "Practical Vastu guidelines for placing your home temple in the Ishanya zone, ideal altar heights, idol arrangement, and sacred color palettes.",
+    shortDescription: "Create a serene worship space in your home with easy-to-follow layout, lighting, and decluttering suggestions.",
     coverImage: "https://images.unsplash.com/photo-1545239351-ef35f43d514b?auto=format&fit=crop&w=1200&q=80",
-    seoTitle: "Home Mandir Vastu Shastra Guide: North-East Altar Setup | Pujaveda",
-    seoDescription: "Learn how to position your home mandir according to Vastu Shastra: Ishanya corner benefits, altar height, and deity arrangement rules.",
-    status: "published",
-    author: "Vastu Vidya Council",
-    content: `
-      <h2>The Ishanya Kon: Gateway of Cosmic Energy</h2>
-      <p>According to Vastu Purusha Mandala, the Northeast (Ishanya) direction is governed by Lord Shiva and the planet Jupiter (Guru). It represents the head of the cosmic being, making it the most auspicious zone for meditation, prayer, and divine communion.</p>
-
-      <h2>Mandir Height & Structural Rules</h2>
-      <p>The base of the temple should be constructed so that the idols stand at the worshipper's chest level when seated. Deities should never be placed directly on the floor. While praying, the devotee should ideally face East or North.</p>
-
-      <ul>
-        <li><strong>Wood Selection:</strong> Teakwood (Sagwan), Sheesham, or pure white marble are considered the most sattvic materials for home sanctums.</li>
-        <li><strong>Harmonious Colors:</strong> Paint the mandir alcove in soft ivory, warm saffron, light yellow, or pale cream. Avoid harsh dark grey or black tones.</li>
-        <li><strong>Idol Spacing:</strong> Ensure deities are kept at least one inch away from the back wall and do not face each other directly.</li>
-      </ul>
-
-      <h2>Maintaining Sacred Atmosphere</h2>
-      <p>Keep the mandir clutter-free. Burn natural cow-ghee diyas and natural sandalwood or guggal dhoop daily at sunrise and sunset to maintain a tranquil, spiritually charged ambiance.</p>
-    `,
-  },
-  {
-    title: "The Transformative Power of Daily Sandhya Aarti and Vedic Chanting",
-    slug: "transformative-power-daily-sandhya-aarti-and-vedic-chanting",
-    category: "Spiritual Lifestyle",
-    shortDescription: "Discover how the twilight Sandhyavandanam ritual and sound frequencies of traditional Sanskrit aartis harmonize body, mind, and home vibration.",
-    coverImage: "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1200&q=80",
-    seoTitle: "The Science & Serenity of Daily Sandhya Aarti | Pujaveda",
-    seoDescription: "Discover the spiritual and psychological benefits of performing morning and evening Sandhya Aarti with traditional brass bells and mantras.",
+    seoTitle: "Home Mandir Setup & Simple Vastu Tips | Pujaveda",
+    seoDescription: "Practical guide to setting up a peaceful home mandir: recommended direction, altar height, clutter-free storage, and soft lighting ideas.",
     status: "published",
     author: "Pujaveda Editorial",
     content: `
-      <h2>The Sacred Junction of Twilight</h2>
-      <p>In Vedic philosophy, <em>Sandhya</em> refers to the sacred confluence of day and night — sunrise and sunset. At these twilight moments, the natural world transitions, the mind becomes naturally reflective, and spiritual practices yield manifold benefits.</p>
+      <h2>Creating a Calm Corner for the Family</h2>
+      <p>In our busy modern lives, having a quiet, dedicated space in the home for prayer and reflection offers a peaceful retreat. Whether you have an entire room or a modest shelf in an apartment, a few thoughtful choices can make your mandir a source of daily serenity.</p>
 
-      <h2>The Science of Sacred Sound (Shabda Brahma)</h2>
-      <p>Chanting ancient Sanskrit mantras accompanied by the pure bronze resonance of a Ghanti (temple bell) produces acoustic frequencies that stimulate the parasympathetic nervous system, reducing mental cortisol and cultivating profound inner calm.</p>
-
-      <blockquote>"Om Dyauh Shantir Antariksham Shantih, Prithivi Shantir Apah Shantir Oshadhayah Shantih — May peace radiate throughout the celestial skies, the atmosphere, the earth, and sacred waters."</blockquote>
-
-      <h2>Simple 15-Minute Evening Routine</h2>
+      <h2>Ideal Direction and Placement</h2>
+      <p>According to traditional architectural wisdom (Vastu Shastra):</p>
       <ul>
-        <li>Wash hands and feet, sit peacefully facing East, and take three mindful breaths.</li>
-        <li>Light an authentic five-wick brass diya using pure cow ghee and camphor.</li>
-        <li>Offer fragrant dhoop while ringing the bell rhythmically to dissipate stagnant energies.</li>
-        <li>Chant 11 rounds of the Gayatri Mantra or Mahamrityunjaya Mantra with genuine reverence.</li>
+        <li><strong>The Northeast Corner:</strong> The Northeast (Ishanya) or East direction is considered ideal for a prayer space, as it captures the fresh morning sunlight and airflow.</li>
+        <li><strong>Facing Direction:</strong> While seated for prayer, it is generally recommended to face East or North.</li>
+        <li><strong>Areas to Avoid:</strong> Try not to place the altar directly under a staircase, against a shared bathroom wall, or directly facing a bed.</li>
       </ul>
-      <p>Conclude by sitting in silent gratitude for two minutes. This simple daily observance transforms a house into a sacred sanctuary of peace.</p>
+
+      <h2>Comfortable Altar Height</h2>
+      <p>Place your mandir or shelf at an elevation where the idols sit roughly at your chest level when seated on the floor or a low cushion. This allows you to look gently forward or slightly upward during meditation without straining your neck.</p>
+
+      <h2>Lighting and Subtle Fragrance</h2>
+      <ul>
+        <li><strong>Warm Lighting:</strong> Use warm white or soft golden LED bulbs rather than harsh blue-white lights.</li>
+        <li><strong>Natural Diyas:</strong> A small brass ghee lamp lit in the morning and evening creates a focused, tranquil focal point.</li>
+        <li><strong>Gentle Incense:</strong> Choose mild, charcoal-free dhoop sticks made with natural herbs, sandalwood, or rose petals. Strong artificial chemical fragrances can cause headaches.</li>
+      </ul>
+
+      <h2>Keep It Clutter-Free</h2>
+      <p>The secret to a peaceful mandir is simplicity. Avoid keeping piles of matchboxes, old plastic bags, or withered flowers on the altar. Store extra oil bottles and cotton wicks in a neat lidded basket or lower drawer so the prayer shelf stays clean and calm.</p>
+    `,
+  },
+  {
+    title: "A Simple 10-Minute Evening Puja Routine for Busy Families",
+    slug: "simple-10-minute-evening-puja-routine-for-busy-families",
+    category: "Spiritual Lifestyle",
+    shortDescription: "How a brief, unhurried evening routine of lighting a diya and taking a moment of gratitude brings calm after a hectic day.",
+    coverImage: "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1200&q=80",
+    seoTitle: "10-Minute Evening Puja Routine for Families | Pujaveda",
+    seoDescription: "Discover how a brief 10-minute evening puja routine of lighting a diya, quiet breathing, and gratitude brings peace to a busy household.",
+    status: "published",
+    author: "Pujaveda Editorial",
+    content: `
+      <h2>The Meaning of the Evening Twilight</h2>
+      <p>As the sun sets and the work day ends, evening marks a natural transition. In Indian tradition, lighting the evening diya (Sandhya Deepam) represents a mindful moment to pause, let go of the day's stress, and bring light and peace into the home.</p>
+
+      <h2>What You Need Ready in 1 Minute</h2>
+      <p>Keep your evening setup quick and effortless:</p>
+      <ul>
+        <li>A small brass diya with cow ghee or sesame oil.</li>
+        <li>A single cotton wick.</li>
+        <li>A stick of natural incense.</li>
+        <li>A small hand bell.</li>
+      </ul>
+
+      <h2>A Simple 3-Step Routine (10 Minutes)</h2>
+      <ol>
+        <li><strong>Wash and Light (2 minutes):</strong> Wash your hands and face with cool water to signal a shift in focus. Light the diya, light the incense, and gently ring the brass bell.</li>
+        <li><strong>Silent Gratitude (4 minutes):</strong> Sit quietly before the mandir. Take five slow, deep breaths. Close your eyes and silently reflect on three things you were grateful for today — whether it was good health, a kind gesture, or shared laughter.</li>
+        <li><strong>Short Prayer or Aarti (4 minutes):</strong> Recite a simple prayer you love, chant the Gayatri Mantra a few times, or sing a short family aarti together.</li>
+      </ol>
+
+      <h2>Involving Children and Elders</h2>
+      <p>The evening prayer is a wonderful way to connect generations. Let children place a flower or ring the bell, and encourage them to share one good thing that happened during their school day. Over time, this brief routine becomes a comforting anchor that children remember fondly throughout their lives.</p>
+
+      <h2>Consistency Over Complexity</h2>
+      <p>You do not need an hour of complicated rituals. A sincere, quiet 10 minutes done every evening with a peaceful heart brings immense harmony to any household.</p>
     `,
   },
 ];
@@ -269,13 +330,20 @@ async function seed() {
       }
     }
 
-    // 2. Seed Blog Articles
-    console.log("\n--- Seeding Blog Articles ---");
+    // 2. Seed Blog Articles (Clean update or creation)
+    console.log("\n--- Seeding / Updating Blog Articles ---");
     for (const art of demoArticles) {
-      const existing = await Blog.findOne({ slug: art.slug });
       const catId = categoryMap[art.category] || null;
+      // Find by matching slug or category for existing demo articles
+      let existing = await Blog.findOne({ slug: art.slug });
+      if (!existing) {
+        // Also check if an earlier demo article existed for this category
+        existing = await Blog.findOne({ category: art.category, isDemo: true });
+      }
+
       if (existing) {
         existing.title = art.title;
+        existing.slug = art.slug;
         existing.category = art.category;
         existing.categoryId = catId;
         existing.shortDescription = art.shortDescription;
@@ -329,7 +397,7 @@ async function seed() {
       }
     }
 
-    // Final verification counts
+    // Verification counts
     console.log("\n--- Verification of Database Collections ---");
     const catCount = await BlogCategory.countDocuments({ isDeleted: { $ne: true } });
     const blogCount = await Blog.countDocuments({ isDeleted: { $ne: true } });
@@ -339,7 +407,7 @@ async function seed() {
     console.log(`Active Coupons in DB: ${couponCount}`);
 
     await mongoose.disconnect();
-    console.log("\nDone! Database successfully populated with realistic demo records.");
+    console.log("\nDone! Database successfully updated with simple, natural customer-friendly demo articles.");
   } catch (error) {
     console.error("Seed error:", error);
     process.exit(1);
@@ -347,4 +415,3 @@ async function seed() {
 }
 
 seed();
-
