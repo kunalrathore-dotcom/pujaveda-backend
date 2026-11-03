@@ -105,10 +105,10 @@ app.get("/api/health", async (req, res) => {
   });
 });
 
-// Diagnostic SMTP Health Check (safe: no secret leakage)
-app.get("/api/health/smtp", async (req, res) => {
-  const { verifySmtpConnectionDetailed } = await import("./services/emailService.js");
-  const result = await verifySmtpConnectionDetailed();
+// Diagnostic Email Health Check (Brevo REST API / SMTP)
+app.get(["/api/health/email", "/api/health/smtp"], async (req, res) => {
+  const { verifyEmailServiceDetailed } = await import("./services/emailService.js");
+  const result = await verifyEmailServiceDetailed();
   res.status(result.connected ? 200 : 503).json(result);
 });
 
