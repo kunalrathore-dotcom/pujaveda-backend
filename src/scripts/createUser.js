@@ -13,7 +13,7 @@ import { User } from "../models/User.js";
 const HASH_PATTERN = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/;
 
 async function verifyLoginApi(email, password) {
-  const port = process.env.PORT || 5000;
+  const port = process.env.PORT || 5001;
   const url = `http://127.0.0.1:${port}/api/auth/login`;
 
   try {

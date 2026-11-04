@@ -137,13 +137,14 @@ export const confirmCapturedPayment = async ({ gatewayOrderId, gatewayPaymentId 
 
     if (recipientEmail) {
       try {
+        console.log(`[PaymentUtility] Initiating order confirmation email for order ${order.orderNumber} to ${recipientEmail}...`);
         const storefrontUrl = process.env.FRONTEND_USER_URL || "https://pujaveda.in";
         const emailContent = getOrderConfirmationEmail({
           order,
           storefrontUrl,
         });
 
-        await sendEmail({
+        const sendResult = await sendEmail({
           to: recipientEmail,
           subject: emailContent.subject,
           text: emailContent.text,
@@ -158,6 +159,7 @@ export const confirmCapturedPayment = async ({ gatewayOrderId, gatewayPaymentId 
           lastError: null,
         };
         await order.save();
+        console.log(`[PaymentUtility] Order confirmation email sent for ${order.orderNumber} to ${recipientEmail} (MessageId: ${sendResult?.messageId})`);
       } catch (emailErr) {
         console.error(`[PaymentUtility] Order confirmation email delivery failed: ${emailErr.message}`);
         order.emailNotification = {

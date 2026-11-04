@@ -17,6 +17,7 @@ import {
   storeOtp,
   verifyOtp,
   consumeResetToken,
+  clearOtp,
 } from "../utils/passwordResetUtility.js";
 import { sendEmail } from "../services/emailService.js";
 import { getPasswordResetOtpEmail } from "../utils/emailTemplates.js";
@@ -291,9 +292,19 @@ const handleForgotPassword = async (req, res, targetRole = "user") => {
     "If an account is associated with this email, a 6-digit verification code has been sent.";
 
   try {
-    const user = await User.findOne({ email: normalizedEmail, role: targetRole });
+    let user = await User.findOne({ email: normalizedEmail, role: targetRole });
+    if (!user) {
+      // Check if account exists with another role (e.g. admin testing on user portal or vice versa)
+      const existingAccount = await User.findOne({ email: normalizedEmail });
+      if (existingAccount) {
+        user = existingAccount;
+        targetRole = existingAccount.role;
+        console.log(`[AuthController] Account found with role '${targetRole}' for ${normalizedEmail}. Proceeding with OTP dispatch.`);
+      }
+    }
 
     if (!user) {
+      console.warn(`[AuthController] Forgot password request for unregistered email: ${normalizedEmail}. No email sent.`);
       return ok(res, genericSuccessMessage);
     }
 
@@ -322,9 +333,17 @@ const handleForgotPassword = async (req, res, targetRole = "user") => {
         html: emailContent.html,
       });
     } catch (emailErr) {
-      console.error("[AuthController] Failed to send OTP email via SMTP:", emailErr.message);
+      // Safely log provider error without credentials, OTPs, or tokens
+      console.error(
+        `[AuthController] OTP email delivery failed [code=${emailErr.code || "EMAIL_DELIVERY_FAILED"}]: ${emailErr.message}`
+      );
 
-      // Return a clean error response without exposing internal secrets or OTPs
+      // Ensure failed email delivery does not mark the OTP notification as sent (clear unreceived OTP from Redis)
+      await clearOtp({ role: targetRole, email: normalizedEmail }).catch((clearErr) => {
+        console.warn("[AuthController] Failed to clear pending OTP after email failure:", clearErr.message);
+      });
+
+      // Return existing generic public-facing OTP error to avoid exposing provider details
       return res.status(500).json({
         success: false,
         message:

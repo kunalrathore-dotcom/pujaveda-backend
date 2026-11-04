@@ -217,6 +217,29 @@ export const checkBrevoAccountDetailed = async () => {
 };
 
 /**
+ * Detects Gmail SMTP error 550 5.4.5: Daily user sending limit exceeded.
+ */
+export const isDailyLimitExceededError = (err) => {
+  if (!err) return false;
+  const combined = [
+    err.message,
+    err.response,
+    err.code,
+    err.responseCode,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    /550[- ]+5\.4\.5/i.test(combined) ||
+    /daily user sending limit exceeded/i.test(combined) ||
+    /daily sending limit exceeded/i.test(combined) ||
+    /daily sending quota exceeded/i.test(combined) ||
+    (String(err.responseCode) === "550" && /5\.4\.5|daily/i.test(combined))
+  );
+};
+
+/**
  * Dedicated legacy SMTP diagnostic check.
  */
 export const checkSmtpDetailed = async () => {
@@ -240,6 +263,24 @@ export const checkSmtpDetailed = async () => {
       error: null,
     };
   } catch (err) {
+    if (isDailyLimitExceededError(err)) {
+      return {
+        transport: "smtp",
+        connected: false,
+        host,
+        port: configuredPort,
+        user: maskedUser,
+        from: senderEmail,
+        error: {
+          code: "EMAIL_DAILY_LIMIT_EXCEEDED",
+          message: "Gmail daily user sending limit exceeded (SMTP 550 5.4.5).",
+          providerResponse: err.response || err.message,
+          retrySkipped: true,
+          note: "Port 465 retry skipped because it shares the same Gmail quota.",
+        },
+      };
+    }
+
     if (err.code === "ETIMEDOUT" || err.code === "ECONNREFUSED" || err.command === "CONN") {
       try {
         const fallback = getTransporter(465);
@@ -335,22 +376,59 @@ export const sendEmail = async ({ to, subject, text, html, toName }) => {
 
   const mailOptions = {
     from: `"${senderName}" <${senderEmail}>`,
+    replyTo: senderEmail,
     to,
     subject,
     text,
     html,
   };
 
+  console.log(`[EmailService] Dispatching email to: ${to} | Subject: "${subject}" | From: "${senderName}" <${senderEmail}>`);
+
   try {
     const t = getTransporter();
-    return await t.sendMail(mailOptions);
+    const info = await t.sendMail(mailOptions);
+    console.log(`[EmailService] Email delivered successfully via SMTP port ${t.options?.port || 587}! MessageId: ${info.messageId}`);
+    console.log(`[EmailService] SMTP Server Response: ${info.response}`);
+    return info;
   } catch (err) {
-    if (err.code === "ETIMEDOUT" || err.code === "ECONNREFUSED" || err.command === "CONN") {
-      console.warn(`[EmailService] SMTP connection on primary port timed out (${err.message}). Retrying via SSL port 465...`);
-      const fallbackTransporter = getTransporter(465);
-      return await fallbackTransporter.sendMail(mailOptions);
+    if (isDailyLimitExceededError(err)) {
+      console.error(
+        `[EmailService] Gmail daily user sending limit exceeded (SMTP 550 5.4.5). Skipping port 465 retry.`
+      );
+      const limitError = new Error(
+        "Gmail daily user sending limit exceeded (SMTP 550 5.4.5). Retry aborted."
+      );
+      limitError.code = "EMAIL_DAILY_LIMIT_EXCEEDED";
+      limitError.provider = "smtp.gmail.com";
+      limitError.providerResponse = err.response || err.message;
+      limitError.responseCode = 550;
+      throw limitError;
     }
-    throw err;
+
+    console.warn(`[EmailService] SMTP primary connection failed (${err.code || err.message}). Retrying via SSL port 465...`);
+    try {
+      const fallbackTransporter = getTransporter(465);
+      const fallbackInfo = await fallbackTransporter.sendMail(mailOptions);
+      console.log(`[EmailService] Fallback SSL port 465 delivery succeeded! MessageId: ${fallbackInfo.messageId}`);
+      return fallbackInfo;
+    } catch (fallbackErr) {
+      if (isDailyLimitExceededError(fallbackErr)) {
+        console.error(
+          `[EmailService] Gmail daily user sending limit reached on fallback port 465 (SMTP 550 5.4.5).`
+        );
+        const limitError = new Error(
+          "Gmail daily user sending limit exceeded (SMTP 550 5.4.5)."
+        );
+        limitError.code = "EMAIL_DAILY_LIMIT_EXCEEDED";
+        limitError.provider = "smtp.gmail.com";
+        limitError.providerResponse = fallbackErr.response || fallbackErr.message;
+        limitError.responseCode = 550;
+        throw limitError;
+      }
+      console.error(`[EmailService] Fatal SMTP delivery error:`, fallbackErr.message);
+      throw fallbackErr;
+    }
   }
 };
 

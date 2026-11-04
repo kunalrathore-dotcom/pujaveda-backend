@@ -75,7 +75,7 @@ export const getPublicBaseUrl = (req) => {
     }
   }
 
-  const port = process.env.PORT || 5000;
+  const port = process.env.PORT || 5001;
   return `http://localhost:${port}`;
 };
 
@@ -91,7 +91,7 @@ export const getPublicImageUrl = (filename, req) => {
     // If it's a legacy localhost URL in a production environment, normalize it to the public backend URL
     if (
       process.env.NODE_ENV === "production" &&
-      (trimmed.includes("localhost:5000/uploads/") || trimmed.includes("localhost:10000/uploads/") || trimmed.includes("127.0.0.1:5000/uploads/"))
+      (trimmed.includes("localhost:5000/uploads/") || trimmed.includes("localhost:5001/uploads/") || trimmed.includes("localhost:10000/uploads/") || trimmed.includes("127.0.0.1:5000/uploads/") || trimmed.includes("127.0.0.1:5001/uploads/"))
     ) {
       const cleanName = path.basename(trimmed.split("?")[0]);
       return `${getPublicBaseUrl(req)}/uploads/${cleanName}`;

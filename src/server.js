@@ -11,7 +11,7 @@ import app from "./app.js";
 import { connectDB, closeDB } from "./config/db.js";
 import { seedDefaultLegalPages } from "./controllers/legalPageController.js";
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 const startServer = async () => {
   try {
