@@ -4,6 +4,47 @@ import nodemailer from "nodemailer";
 let transporter = null;
 
 /**
+ * Creates or retrieves the nodemailer SMTP transporter.
+ * 
+ * Note on TLS configuration:
+ * - Port 587: standard STARTTLS (secure: false, requireTLS: true).
+ * - Port 465: implicit SSL/TLS (secure: true).
+ * Even if SMTP_SECURE=ssl is set in .env, port 587 MUST use secure: false.
+ * Applying secure: true to port 587 will fail the TLS handshake with:
+ * "SSL routines:tls_validate_record_header:wrong version number".
+ */
+export const getTransporter = (forcePort = null) => {
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const configuredPort = Number(process.env.SMTP_PORT || 587);
+  const port = forcePort || configuredPort;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!user || !pass) {
+    console.warn("[EmailService] SMTP credentials not configured.");
+  }
+
+  const secure = port === 465;
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    requireTLS: !secure,
+    auth: {
+      user,
+      pass,
+    },
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 12000,
+    tls: {
+      rejectUnauthorized: true,
+    },
+  });
+};
+
+/**
  * Helper to retrieve Brevo API key across common naming conventions.
  */
 export const getBrevoApiKey = () => {
@@ -183,6 +224,7 @@ export const checkSmtpDetailed = async () => {
   const configuredPort = Number(process.env.SMTP_PORT || 587);
   const user = process.env.SMTP_USER || "";
   const maskedUser = user ? user.replace(/^(.{3})(.*)(@.*)$/, "$1***$3") : "not_configured";
+  const senderEmail = process.env.EMAIL_FROM || process.env.MAIL_FROM || user || "not_configured";
 
   try {
     const t = getTransporter();
@@ -194,19 +236,55 @@ export const checkSmtpDetailed = async () => {
       port: t.options.port,
       mode: t.options.secure ? "SSL" : "STARTTLS",
       user: maskedUser,
+      from: senderEmail,
       error: null,
     };
   } catch (err) {
+    if (err.code === "ETIMEDOUT" || err.code === "ECONNREFUSED" || err.command === "CONN") {
+      try {
+        const fallback = getTransporter(465);
+        await fallback.verify();
+        return {
+          transport: "smtp",
+          connected: true,
+          host,
+          port: 465,
+          mode: "SSL (failover from port 587)",
+          user: maskedUser,
+          from: senderEmail,
+          error: null,
+          note: `Port ${configuredPort} connection timed out; successfully verified connection via SSL port 465.`,
+        };
+      } catch (fbErr) {
+        return {
+          transport: "smtp",
+          connected: false,
+          host,
+          port: configuredPort,
+          user: maskedUser,
+          from: senderEmail,
+          error: {
+            primaryMessage: err.message,
+            primaryCode: err.code || null,
+            fallback465Message: fbErr.message,
+            fallback465Code: fbErr.code || null,
+            note: "Render Free blocks outbound SMTP ports 25, 465, and 587.",
+          },
+        };
+      }
+    }
+
     return {
       transport: "smtp",
       connected: false,
       host,
       port: configuredPort,
       user: maskedUser,
+      from: senderEmail,
       error: {
         message: err.message,
         code: err.code || null,
-        note: "Render Free blocks outbound SMTP ports 25, 465, and 587. Please use Brevo REST API over HTTPS port 443.",
+        response: err.response || null,
       },
     };
   }
@@ -252,7 +330,7 @@ export const sendEmail = async ({ to, subject, text, html, toName }) => {
   }
 
   // 2. SMTP Transport fallback (for local development)
-  const senderEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || "support.youngdecade@gmail.com";
+  const senderEmail = process.env.EMAIL_FROM || process.env.MAIL_FROM || process.env.SMTP_USER || "support.youngdecade@gmail.com";
   const senderName = process.env.EMAIL_FROM_NAME || process.env.APP_NAME || "Pujaveda";
 
   const mailOptions = {
