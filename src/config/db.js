@@ -1,4 +1,22 @@
 import mongoose from "mongoose";
+import dns from "dns";
+
+/**
+ * Ensures reliable DNS servers are available for SRV queries.
+ * On Windows, Node.js c-ares often defaults to ['127.0.0.1'] when network adapters
+ * use IPv6 or non-standard router DNS, causing `querySrv ECONNREFUSED`.
+ */
+const ensureDnsServers = () => {
+  try {
+    const servers = dns.getServers();
+    if (!servers || servers.length === 0 || (servers.length === 1 && servers[0] === "127.0.0.1")) {
+      console.log("[MongoDB] Local DNS loopback detected. Configuring reliable DNS fallbacks (8.8.8.8, 1.1.1.1)...");
+      dns.setServers(["8.8.8.8", "1.1.1.1"]);
+    }
+  } catch (err) {
+    console.warn("[MongoDB] DNS server check warning:", err.message);
+  }
+};
 
 /**
  * Masks username and password in a MongoDB connection string to safely log the target.
@@ -9,6 +27,7 @@ export const maskMongoUri = (uri) => {
 };
 
 export const connectDB = async () => {
+  ensureDnsServers();
   const uri = process.env.MONGODB_URI;
 
   if (!uri || uri.includes("<MY_ROTATED_MONGODB_ATLAS_CONNECTION_URI>")) {
@@ -38,6 +57,19 @@ export const connectDB = async () => {
       `[MongoDB] Connected successfully to host: ${mongoose.connection.host}, database: ${mongoose.connection.name}`
     );
   } catch (error) {
+    if (error.message && (error.message.includes("querySrv") || error.code === "ECONNREFUSED")) {
+      console.warn("[MongoDB] querySrv failure detected. Retrying with Google & Cloudflare DNS (8.8.8.8, 1.1.1.1)...");
+      try {
+        dns.setServers(["8.8.8.8", "1.1.1.1"]);
+        await mongoose.connect(uri, options);
+        console.log(
+          `[MongoDB] Connected successfully on retry to host: ${mongoose.connection.host}, database: ${mongoose.connection.name}`
+        );
+        return;
+      } catch (retryErr) {
+        error = retryErr;
+      }
+    }
     console.error("\n========================================================");
     console.error("[MongoDB] CONNECTION FAILED:");
     console.error(`Target: ${maskMongoUri(uri)}`);
