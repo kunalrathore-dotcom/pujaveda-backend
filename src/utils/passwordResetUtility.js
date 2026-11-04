@@ -59,14 +59,16 @@ export const storeOtp = async ({ role, email, otp }) => {
   await pipeline.exec();
 };
 
-export const clearOtp = async ({ role, email }) => {
+export const clearOtp = async ({ role, email, preserveCooldown = true }) => {
   if (!redisClient) return;
   const otpKey = getOtpKey(role, email);
-  const cooldownKey = getCooldownKey(role, email);
   try {
     const pipeline = redisClient.pipeline();
     pipeline.del(otpKey);
-    pipeline.del(cooldownKey);
+    if (!preserveCooldown) {
+      const cooldownKey = getCooldownKey(role, email);
+      pipeline.del(cooldownKey);
+    }
     await pipeline.exec();
   } catch (err) {
     console.warn(`[PasswordResetUtility] Error clearing OTP for ${email}:`, err.message);
